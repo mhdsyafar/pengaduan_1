@@ -1,0 +1,251 @@
+import 'package:flutter/material.dart';
+
+class StatisticsView extends StatelessWidget {
+  const StatisticsView({super.key});
+
+  static const Color _primary = Color(0xFF7048E8);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F4FF),
+      body: CustomScrollView(
+        slivers: [
+          _buildAppBar(),
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                _buildSummaryRow(),
+                const SizedBox(height: 16),
+                _buildChartCard(),
+                const SizedBox(height: 16),
+                _buildCategoryCard(),
+                const SizedBox(height: 16),
+                _buildTrendCard(),
+                const SizedBox(height: 16),
+              ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  SliverAppBar _buildAppBar() {
+    return SliverAppBar(
+      pinned: true,
+      backgroundColor: _primary,
+      title: const Text('Statistik Pengaduan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.filter_list_rounded, color: Colors.white),
+          onPressed: () {},
+        ),
+      ],
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF5E35B1), Color(0xFF7048E8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow() {
+    final items = [
+      {'label': 'Total', 'value': '24', 'color': _primary},
+      {'label': 'Selesai', 'value': '12', 'color': const Color(0xFF2F9E44)},
+      {'label': 'Diproses', 'value': '10', 'color': const Color(0xFFEA6C00)},
+      {'label': 'Mendesak', 'value': '2', 'color': const Color(0xFFE03131)},
+    ];
+    return Row(
+      children: items.map((e) {
+        final color = e['color'] as Color;
+        return Expanded(
+          child: Container(
+            margin: EdgeInsets.only(right: items.indexOf(e) < items.length - 1 ? 8 : 0),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: color.withOpacity(0.2)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(e['value'] as String, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+                Text(e['label'] as String, style: TextStyle(fontSize: 10, color: color.withOpacity(0.7))),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildChartCard() {
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul'];
+    final values = [8, 12, 7, 15, 10, 9, 5];
+    final done = [6, 10, 4, 12, 7, 8, 3];
+    const maxVal = 15.0;
+
+    return _card(
+      'Grafik Pengaduan Bulanan',
+      Column(
+        children: [
+          Row(children: [
+            _legendDot(_primary, 'Masuk'),
+            const SizedBox(width: 12),
+            _legendDot(const Color(0xFF2F9E44), 'Selesai'),
+          ]),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 110,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: List.generate(months.length, (i) {
+                final h = (values[i] / maxVal * 100).toDouble();
+                final doneH = (done[i] / maxVal * 100).toDouble();
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(values[i].toString(), style: const TextStyle(fontSize: 9, color: Colors.grey)),
+                    const SizedBox(height: 2),
+                    Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      Container(width: 12, height: h, decoration: BoxDecoration(color: _primary.withOpacity(0.3), borderRadius: BorderRadius.circular(4))),
+                      const SizedBox(width: 2),
+                      Container(width: 12, height: doneH, decoration: BoxDecoration(color: const Color(0xFF2F9E44), borderRadius: BorderRadius.circular(4))),
+                    ]),
+                    const SizedBox(height: 6),
+                    Text(months[i], style: const TextStyle(fontSize: 9, color: Colors.grey)),
+                  ],
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryCard() {
+    final categories = [
+      {'label': 'Akademik', 'count': 10, 'pct': 0.42, 'color': _primary},
+      {'label': 'Fasilitas', 'count': 7, 'pct': 0.29, 'color': const Color(0xFFEA6C00)},
+      {'label': 'Perilaku', 'count': 4, 'pct': 0.17, 'color': const Color(0xFFE03131)},
+      {'label': 'Lainnya', 'count': 3, 'pct': 0.12, 'color': const Color(0xFF2F9E44)},
+    ];
+
+    return _card(
+      'Kategori Pengaduan',
+      Column(
+        children: categories.map((c) {
+          final color = c['color'] as Color;
+          final pct = c['pct'] as double;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              children: [
+                Container(width: 10, height: 10, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
+                const SizedBox(width: 10),
+                Text(c['label'] as String, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                const Spacer(),
+                Text('${c['count']} laporan', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 80,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: pct,
+                      minHeight: 6,
+                      backgroundColor: color.withOpacity(0.12),
+                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text('${(pct * 100).toInt()}%', style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildTrendCard() {
+    return _card(
+      'Waktu Penyelesaian Rata-rata',
+      Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _trendStat('Tercepat', '1 hari', const Color(0xFF2F9E44)),
+              _divider(),
+              _trendStat('Rata-rata', '3 hari', _primary),
+              _divider(),
+              _trendStat('Terlama', '8 hari', const Color(0xFFE03131)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.trending_up_rounded, color: Color(0xFF2F9E44), size: 18),
+              const SizedBox(width: 8),
+              Text('Penyelesaian bulan ini meningkat 15% dari bulan sebelumnya', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _trendStat(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+      ],
+    );
+  }
+
+  Widget _divider() => Container(width: 1, height: 40, color: Colors.grey.shade200);
+
+  Widget _legendDot(Color color, String label) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(width: 10, height: 10, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
+      const SizedBox(width: 4),
+      Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+    ]);
+  }
+
+  Widget _card(String title, Widget content) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1C1C3A))),
+          const SizedBox(height: 14),
+          content,
+        ],
+      ),
+    );
+  }
+}

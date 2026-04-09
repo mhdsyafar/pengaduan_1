@@ -9,5 +9,15 @@ final List<Map<String, dynamic>> user = [
     'password': '123456',
     'role': 'orangtua',
   },
+  {
+    'email': 'tu@gmail.com',
+    'password': '123456',
+    'role': 'tu',
+  },
+  {
+    'email': 'kepsek@gmail.com',
+    'password': '123456',
+    'role': 'kepsek',
+  },
 ];
 

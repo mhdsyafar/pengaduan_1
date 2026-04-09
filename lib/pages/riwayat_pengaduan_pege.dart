@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/dummy_pengaduan.dart';
 
+
 class RiwayatPengaduanPage extends StatelessWidget {
   const RiwayatPengaduanPage({super.key});
 
@@ -21,9 +22,7 @@ class RiwayatPengaduanPage extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 12),
             child: ListTile(
               title: Text(data['judul']!),
-              subtitle: Text(
-                '${data['tanggal']} • Status: ${data['status']}',
-              ),
+              subtitle: Text('${data['tanggal']} • Status: ${data['status']}'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             ),
           );
