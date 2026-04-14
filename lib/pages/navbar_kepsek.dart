@@ -47,7 +47,7 @@ class _NavbarKepsekState extends State<NavbarKepsek> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: _primary.withOpacity(0.10),
+            color: _primary.withValues(alpha: 0.10),
             blurRadius: 24,
             offset: const Offset(0, -4),
           ),
@@ -76,7 +76,7 @@ class _NavbarKepsekState extends State<NavbarKepsek> {
         curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? _primary.withOpacity(0.12) : Colors.transparent,
+          color: active ? _primary.withValues(alpha: 0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(

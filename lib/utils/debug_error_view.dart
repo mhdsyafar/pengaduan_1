@@ -33,6 +33,7 @@ $stack
             icon: const Icon(Icons.copy),
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: text));
+              if (!context.mounted) return;
 
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(

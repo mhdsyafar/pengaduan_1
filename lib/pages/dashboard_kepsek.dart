@@ -1,38 +1,90 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+import '../models/models.dart';
 
-class DashboardKepsek extends StatelessWidget {
+class DashboardKepsek extends StatefulWidget {
   const DashboardKepsek({super.key});
 
+  @override
+  State<DashboardKepsek> createState() => _DashboardKepsekState();
+}
+
+class _DashboardKepsekState extends State<DashboardKepsek> {
   static const Color _primary = Color(0xFF7048E8);
+
+  Map<String, dynamic>? userData;
+  List<Pengaduan> listPengaduan = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    final user = await ApiService.getUserData();
+    final pengaduanResponse = await ApiService.getAllPengaduan();
+
+    List<Pengaduan> mappedAduan = [];
+    if (pengaduanResponse['success'] == true) {
+      mappedAduan = (pengaduanResponse['data'] as List)
+          .map((item) => Pengaduan.fromJson(item))
+          .toList();
+    }
+
+    setState(() {
+      userData = user;
+      listPengaduan = mappedAduan;
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF5F4FF),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final total = listPengaduan.length;
+    final diproses = listPengaduan.where((e) => e.status == StatusPengaduan.diproses).length;
+    final selesai = listPengaduan.where((e) => e.status == StatusPengaduan.selesai).length;
+    // Dummy counting prioritias tinggi since prioritizing logic needs backend adjustments:
+    final tinggi = listPengaduan.where((e) => e.prioritas == Prioritas.tinggi).length;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F4FF),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeader(context),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 4),
-                  _buildStatGrid(),
-                  const SizedBox(height: 20),
-                  _buildSectionTitle("Tren Pengaduan Bulanan"),
-                  const SizedBox(height: 12),
-                  _buildChart(),
-                  const SizedBox(height: 20),
-                  _buildSectionTitle("Aktivitas Terbaru"),
-                  const SizedBox(height: 12),
-                  _buildActivityList(),
-                  const SizedBox(height: 16),
-                ],
+      body: RefreshIndicator(
+        onRefresh: _fetchData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              _buildHeader(context),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 4),
+                    _buildStatGrid(total, diproses, selesai, tinggi),
+                    const SizedBox(height: 20),
+                    _buildSectionTitle("Tren Pengaduan Bulanan"),
+                    const SizedBox(height: 12),
+                    _buildChart(),
+                    const SizedBox(height: 20),
+                    _buildSectionTitle("Aktivitas Terbaru"),
+                    const SizedBox(height: 12),
+                    _buildActivityList(listPengaduan.take(5).toList()),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -52,6 +104,8 @@ class DashboardKepsek extends StatelessWidget {
     } else {
       greeting = 'Selamat Malam';
     }
+
+    final String namaLengkap = userData?['nama_lengkap'] ?? userData?['username'] ?? "Kepala Sekolah";
 
     return Container(
       width: double.infinity,
@@ -77,9 +131,9 @@ class DashboardKepsek extends StatelessWidget {
                     children: [
                       Text('$greeting,', style: const TextStyle(color: Colors.white70, fontSize: 14)),
                       const SizedBox(height: 2),
-                      const Text(
-                        'Drs. Sulaiman, M.Pd',
-                        style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                      Text(
+                        namaLengkap,
+                        style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                       const Text('Kepala Sekolah', style: TextStyle(color: Colors.white60, fontSize: 13)),
                     ],
@@ -87,7 +141,7 @@ class DashboardKepsek extends StatelessWidget {
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.4), width: 2),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
                     ),
                     child: const CircleAvatar(
                       radius: 28,
@@ -100,9 +154,9 @@ class DashboardKepsek extends StatelessWidget {
               const SizedBox(height: 20),
               Row(
                 children: [
-                  _headerChip(Icons.calendar_today_rounded, 'Rabu, 12 Maret 2026'),
+                  _headerChip(Icons.calendar_today_rounded, '${now.day}/${now.month}/${now.year}'),
                   const SizedBox(width: 8),
-                  _headerChip(Icons.circle, 'Semester Genap'),
+                  _headerChip(Icons.circle, 'Semester Saat Ini'),
                 ],
               ),
             ],
@@ -116,9 +170,9 @@ class DashboardKepsek extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -132,7 +186,7 @@ class DashboardKepsek extends StatelessWidget {
   }
 
   // ======================== STAT GRID ========================
-  Widget _buildStatGrid() {
+  Widget _buildStatGrid(int total, int diproses, int selesai, int tinggi) {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -141,10 +195,10 @@ class DashboardKepsek extends StatelessWidget {
       mainAxisSpacing: 12,
       childAspectRatio: 1.5,
       children: [
-        _statCard("Total Pengaduan", "24", Icons.report_rounded, const Color(0xFF7048E8), const Color(0xFFF3F0FF)),
-        _statCard("Sedang Diproses", "10", Icons.pending_actions_rounded, const Color(0xFFEA6C00), const Color(0xFFFFF4E6)),
-        _statCard("Selesai", "12", Icons.check_circle_rounded, const Color(0xFF2F9E44), const Color(0xFFE6FCF5)),
-        _statCard("Prioritas Tinggi", "2", Icons.warning_amber_rounded, const Color(0xFFE03131), const Color(0xFFFFF5F5)),
+        _statCard("Total Pengaduan", total.toString(), Icons.report_rounded, const Color(0xFF7048E8), const Color(0xFFF3F0FF)),
+        _statCard("Sedang Diproses", diproses.toString(), Icons.pending_actions_rounded, const Color(0xFFEA6C00), const Color(0xFFFFF4E6)),
+        _statCard("Selesai", selesai.toString(), Icons.check_circle_rounded, const Color(0xFF2F9E44), const Color(0xFFE6FCF5)),
+        _statCard("Prioritas Tinggi", tinggi.toString(), Icons.warning_amber_rounded, const Color(0xFFE03131), const Color(0xFFFFF5F5)),
       ],
     );
   }
@@ -155,8 +209,8 @@ class DashboardKepsek extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.12)),
-        boxShadow: [BoxShadow(color: color.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))],
+        border: Border.all(color: color.withValues(alpha: 0.12)),
+        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,14 +218,14 @@ class DashboardKepsek extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
             child: Icon(icon, color: color, size: 18),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(value, style: TextStyle(color: color, fontSize: 26, fontWeight: FontWeight.bold)),
-              Text(label, style: TextStyle(color: color.withOpacity(0.7), fontSize: 11, fontWeight: FontWeight.w500)),
+              Text(label, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 11, fontWeight: FontWeight.w500)),
             ],
           ),
         ],
@@ -186,6 +240,7 @@ class DashboardKepsek extends StatelessWidget {
 
   // ======================== DIY CHART ========================
   Widget _buildChart() {
+    // Keep dummy data for chart as the backend doesn't aggregate yet
     final data = [
       {'label': 'Jan', 'value': 8, 'done': 6},
       {'label': 'Feb', 'value': 12, 'done': 10},
@@ -201,7 +256,7 @@ class DashboardKepsek extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12)],
       ),
       child: Column(
         children: [
@@ -231,7 +286,7 @@ class DashboardKepsek extends StatelessWidget {
                       children: [
                         Container(
                           width: 12, height: totalH,
-                          decoration: BoxDecoration(color: _primary.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+                          decoration: BoxDecoration(color: _primary.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4)),
                         ),
                         const SizedBox(width: 2),
                         Container(
@@ -264,37 +319,59 @@ class DashboardKepsek extends StatelessWidget {
   }
 
   // ======================== ACTIVITY LIST ========================
-  Widget _buildActivityList() {
-    final activities = [
-      {'icon': Icons.inbox_rounded, 'title': 'Pengaduan tugas terlalu banyak', 'by': 'Orang Tua Kelas 8B', 'time': '10 menit lalu', 'color': const Color(0xFFEA6C00), 'status': 'Diproses'},
-      {'icon': Icons.check_circle_rounded, 'title': 'Laporan keterlambatan guru', 'by': 'Orang Tua Kelas 7A', 'time': '30 menit lalu', 'color': const Color(0xFF2F9E44), 'status': 'Selesai'},
-      {'icon': Icons.inbox_rounded, 'title': 'Pengaduan fasilitas kelas rusak', 'by': 'Orang Tua Kelas 9C', 'time': '1 jam lalu', 'color': const Color(0xFF7048E8), 'status': 'Masuk'},
-      {'icon': Icons.warning_amber_rounded, 'title': 'Perilaku tidak sopan siswa', 'by': 'Orang Tua Kelas 8A', 'time': '3 jam lalu', 'color': const Color(0xFFE03131), 'status': 'Mendesak'},
-    ];
+  Widget _buildActivityList(List<Pengaduan> list) {
+    if (list.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12)],
+        ),
+        child: const Center(
+          child: Text('Belum ada laporan terbaru', style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12)],
       ),
       child: Column(
-        children: activities.asMap().entries.map((e) {
+        children: list.asMap().entries.map((e) {
           final i = e.key;
-          final a = e.value;
-          final color = a['color'] as Color;
+          final p = e.value;
+          Color color;
+          String label;
+          if (p.status == StatusPengaduan.diproses) {
+            color = const Color(0xFF3B5BDB);
+            label = "Diproses";
+          } else if (p.status == StatusPengaduan.selesai) {
+            color = const Color(0xFF2F9E44);
+            label = "Selesai";
+          } else if (p.status == StatusPengaduan.ditolak) {
+            color = const Color(0xFFE03131);
+            label = "Ditolak";
+          } else {
+            color = const Color(0xFFEA6C00);
+            label = "Baru";
+          }
+
           return Column(
             children: [
               ListTile(
                 leading: Container(
                   width: 42, height: 42,
-                  decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
-                  child: Icon(a['icon'] as IconData, color: color, size: 20),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
+                  child: Icon(Icons.inbox_rounded, color: color, size: 20),
                 ),
-                title: Text(a['title'] as String, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                title: Text(p.judul, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                 subtitle: Row(
                   children: [
-                    Text(a['by'] as String, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                    Text("Oleh: ${p.namaPengadu} • ${p.kategori}", style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                   ],
                 ),
                 trailing: Column(
@@ -303,15 +380,15 @@ class DashboardKepsek extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
-                      child: Text(a['status'] as String, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
+                      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
+                      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
                     ),
                     const SizedBox(height: 4),
-                    Text(a['time'] as String, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                    Text(p.tanggal.substring(0, 10), style: const TextStyle(fontSize: 10, color: Colors.grey)),
                   ],
                 ),
               ),
-              if (i < activities.length - 1) const Divider(height: 1, indent: 16, endIndent: 16),
+              if (i < list.length - 1) const Divider(height: 1, indent: 16, endIndent: 16),
             ],
           );
         }).toList(),

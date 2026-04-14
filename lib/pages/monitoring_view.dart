@@ -64,14 +64,14 @@ class MonitoringView extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.10),
+          color: color.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Column(children: [
           Text(count, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(fontSize: 9, color: color.withOpacity(0.8)), textAlign: TextAlign.center),
+          Text(label, style: TextStyle(fontSize: 9, color: color.withValues(alpha: 0.8)), textAlign: TextAlign.center),
         ]),
       ),
     );
@@ -97,7 +97,7 @@ class MonitoringView extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
           ),
           child: Row(
             children: [
@@ -105,7 +105,7 @@ class MonitoringView extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [color.withOpacity(0.3), color.withOpacity(0.15)]),
+                  gradient: LinearGradient(colors: [color.withValues(alpha: 0.3), color.withValues(alpha: 0.15)]),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.person_rounded, color: color, size: 24),
@@ -133,7 +133,7 @@ class MonitoringView extends StatelessWidget {
                   const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: color.withOpacity(0.10), borderRadius: BorderRadius.circular(20)),
+                    decoration: BoxDecoration(color: color.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(20)),
                     child: Text(t['status'] as String, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
                   ),
                 ],
@@ -158,7 +158,7 @@ class MonitoringView extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: const Border(left: BorderSide(color: Color(0xFFE03131), width: 4)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
         ),
         child: Row(
           children: [

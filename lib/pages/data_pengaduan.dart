@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
-import 'navbar_kepsek.dart';
-class DataPengaduan extends StatefulWidget {
-  final List<Pengaduan> pengaduan;
+import '../services/api_service.dart';
 
-  const DataPengaduan({super.key, required this.pengaduan});
+class DataPengaduan extends StatefulWidget {
+  const DataPengaduan({super.key});
 
   @override
   State<DataPengaduan> createState() => _DataPengaduanState();
@@ -14,65 +13,107 @@ class _DataPengaduanState extends State<DataPengaduan> {
   String search = '';
   String statusFilter = 'semua';
   Pengaduan? selected;
+  
+  List<Pengaduan> pengaduanList = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    setState(() => isLoading = true);
+    final response = await ApiService.getAllPengaduan();
+    
+    if (!mounted) return;
+
+    if (response['success'] == true) {
+      final list = (response['data'] as List)
+          .map((item) => Pengaduan.fromJson(item))
+          .toList();
+      setState(() {
+        pengaduanList = list;
+        isLoading = false;
+      });
+    } else {
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(response['message'] ?? 'Gagal memuat data')),
+      );
+    }
+  }
 
   List<Pengaduan> get filtered {
-    return widget.pengaduan.where((p) {
+    return pengaduanList.where((p) {
       final matchSearch =
           p.judul.toLowerCase().contains(search.toLowerCase()) ||
           p.namaPengadu.toLowerCase().contains(search.toLowerCase()) ||
           p.id.toLowerCase().contains(search.toLowerCase());
 
-      final matchStatus =
-          statusFilter == 'semua' || p.status == statusFilter;
+      bool matchStatus = statusFilter == 'semua';
+      if (!matchStatus) {
+        if (statusFilter == 'masuk') matchStatus = p.status == StatusPengaduan.masuk;
+        if (statusFilter == 'diproses') matchStatus = p.status == StatusPengaduan.diproses;
+        if (statusFilter == 'selesai') matchStatus = p.status == StatusPengaduan.selesai;
+        if (statusFilter == 'ditolak') matchStatus = p.status == StatusPengaduan.ditolak;
+      }
 
       return matchSearch && matchStatus;
     }).toList();
   }
 
- void updateStatus(String id, StatusPengaduan status) {
-  setState(() {
-    final index = widget.pengaduan.indexWhere((e) => e.id == id);
+  Future<void> updateStatus(String id, StatusPengaduan status) async {
+    // 1. Dapatkan konversi string status
+    String statusStr = 'diajukan'; // default
+    if (status == StatusPengaduan.diproses) statusStr = 'diproses';
+    if (status == StatusPengaduan.selesai) statusStr = 'selesai';
+    if (status == StatusPengaduan.ditolak) statusStr = 'ditolak';
 
-    if (index != -1) {
-      final old = widget.pengaduan[index];
-
-      widget.pengaduan[index] = Pengaduan(
-        id: old.id,
-        pengaduId: old.pengaduId,
-        namaPengadu: old.namaPengadu,
-        judul: old.judul,
-        isi: old.isi,
-        kategori: old.kategori,
-        status: status, // ✅ enum
-        tanggal: old.tanggal,
-        prioritas: old.prioritas,
+    // 2. Panggil API backend
+    final response = await ApiService.updateStatusPengaduan(id, statusStr);
+    
+    if (!mounted) return;
+    
+    if (response['success'] == true) {
+      // 3. Jika sukses, muat ulang daftar pengaduan
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Status berhasil diperbarui!')),
       );
-
-      if (selected?.id == id) {
-        selected = widget.pengaduan[index];
-      }
+      _fetchData();
+    } else {
+      // 4. Jika gagal, tampilkan error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(response['message'] ?? 'Gagal memperbarui status')),
+      );
     }
-  });
-}
+  }
 
   Color statusColor(StatusPengaduan status) {
-      switch (status) {
-        case StatusPengaduan.masuk:
-          return Colors.blue;
-        case StatusPengaduan.diproses:
-          return Colors.orange;
-        case StatusPengaduan.selesai:
-          return Colors.green;
-        case StatusPengaduan.ditolak:
-          return Colors.red;
-      }
+    switch (status) {
+      case StatusPengaduan.masuk:
+        return Colors.blue;
+      case StatusPengaduan.diproses:
+        return Colors.orange;
+      case StatusPengaduan.selesai:
+        return Colors.green;
+      case StatusPengaduan.ditolak:
+        return Colors.red;
     }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Data Pengaduan'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: isLoading ? null : _fetchData,
+          )
+        ],
       ),
       body: Column(
         children: [
@@ -114,39 +155,45 @@ class _DataPengaduanState extends State<DataPengaduan> {
 
           // LIST
           Expanded(
-            child: filtered.isEmpty
-                ? const Center(child: Text('Tidak ada pengaduan'))
-                : ListView.builder(
-                    itemCount: filtered.length,
-                    itemBuilder: (context, i) {
-                      final p = filtered[i];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: statusColor(p.status).withOpacity(0.2),
-                            child: Icon(
-                              Icons.inbox,
-                              color: statusColor(p.status),
-                            ),
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : filtered.isEmpty
+                    ? const Center(child: Text('Tidak ada pengaduan'))
+                    : RefreshIndicator(
+                        onRefresh: _fetchData,
+                        child: ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount: filtered.length,
+                            itemBuilder: (context, i) {
+                              final p = filtered[i];
+                              return Card(
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: statusColor(p.status).withValues(alpha: 0.2),
+                                    child: Icon(
+                                      Icons.inbox,
+                                      color: statusColor(p.status),
+                                    ),
+                                  ),
+                                  title: Text(p.judul),
+                                  subtitle: Text(
+                                      '${p.namaPengadu} • ${p.tanggal.substring(0, 10)}'),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () {
+                                    setState(() => selected = p);
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      builder: (_) => detailSheet(),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
                           ),
-                          title: Text(p.judul),
-                          subtitle: Text(
-                              '${p.namaPengadu} • ${p.tanggal}'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () {
-                            setState(() => selected = p);
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              builder: (_) => detailSheet(),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
+                      ),
           ),
         ],
       ),
@@ -165,15 +212,15 @@ class _DataPengaduanState extends State<DataPengaduan> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                p.id,
+                '#${p.id}',
                 style: const TextStyle(
                   fontFamily: 'monospace',
                   fontSize: 12,
                 ),
               ),
               Chip(
-                label: Text(p.status.name), // ✅ FIX
-                backgroundColor: statusColor(p.status).withOpacity(0.2),
+                label: Text(p.status.name),
+                backgroundColor: statusColor(p.status).withValues(alpha: 0.2),
               ),
             ],
           ),
@@ -183,7 +230,7 @@ class _DataPengaduanState extends State<DataPengaduan> {
                   const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text('Pengadu: ${p.namaPengadu}'),
-          Text('Tanggal: ${p.tanggal}'),
+          Text('Tanggal: ${p.tanggal.substring(0, 10)}'),
           Text('Kategori: ${p.kategori}'),
           const SizedBox(height: 12),
           Text(p.isi),
@@ -199,11 +246,15 @@ class _DataPengaduanState extends State<DataPengaduan> {
                 .where((s) => s != p.status)
                 .map(
                   (s) => ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      side: BorderSide(color: statusColor(s)),
+                      backgroundColor: statusColor(s).withValues(alpha: 0.1),
+                    ),
                     onPressed: () {
-                      updateStatus(p.id, s); // ✅ enum
-                      Navigator.pop(context);
+                      Navigator.pop(context); // Close sheet before updating
+                      updateStatus(p.id, s);
                     },
-                    child: Text(s.name), // tampilkan teks
+                    child: Text(s.name, style: TextStyle(color: statusColor(s))),
                   ),
                 )
                 .toList(),

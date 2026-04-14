@@ -1,31 +1,6 @@
 import 'package:flutter/material.dart';
-import 'navbar_kepsek.dart';
-// =====================
-// MODEL PENGADU
-// =====================
-class Pengadu {
-  final String id;
-  String nama;
-  String nik;
-  String alamat;
-  String telepon;
-  String email;
-  String tanggalDaftar;
+import '../services/api_service.dart';
 
-  Pengadu({
-    required this.id,
-    required this.nama,
-    required this.nik,
-    required this.alamat,
-    required this.telepon,
-    required this.email,
-    required this.tanggalDaftar,
-  });
-}
-
-// =====================
-// PAGE
-// =====================
 class KelolaPengaduPage extends StatefulWidget {
   const KelolaPengaduPage({super.key});
 
@@ -36,212 +11,103 @@ class KelolaPengaduPage extends StatefulWidget {
 class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
   final TextEditingController searchCtrl = TextEditingController();
 
-  List<Pengadu> pengadu = [];
-  List<Pengadu> filtered = [];
+  List<dynamic> orangtua = [];
+  List<dynamic> filtered = [];
+  List<dynamic> siswaList = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    filtered = pengadu;
     searchCtrl.addListener(_onSearch);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => isLoading = true);
+    final res = await ApiService.getAllOrangtua();
+    final resSiswa = await ApiService.getAllSiswa();
+    
+    if (res['success']) {
+      setState(() {
+        orangtua = res['data'];
+        filtered = orangtua;
+      });
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? 'Gagal memuat orang tua')),
+        );
+      }
+    }
+    
+    if (resSiswa['success']) {
+      setState(() {
+        siswaList = resSiswa['data'];
+      });
+    }
+
+    setState(() => isLoading = false);
   }
 
   void _onSearch() {
     final q = searchCtrl.text.toLowerCase();
     setState(() {
-      filtered = pengadu
-          .where((p) =>
-              p.nama.toLowerCase().contains(q) ||
-              p.nik.contains(q))
-          .toList();
+      filtered = orangtua.where((p) {
+        final nama = p['User']['nama_lengkap']?.toLowerCase() ?? '';
+        final username = p['User']['username']?.toLowerCase() ?? '';
+        return nama.contains(q) || username.contains(q);
+      }).toList();
     });
   }
 
-  // =====================
-  // ADD
-  // =====================
-  void tambahPengadu(Pengadu p) {
-    setState(() {
-      pengadu.add(p);
-      filtered = pengadu;
-    });
-  }
-
-  // =====================
-  // EDIT
-  // =====================
-  void editPengadu(Pengadu p) {
-    setState(() {
-      final index = pengadu.indexWhere((e) => e.id == p.id);
-      if (index != -1) pengadu[index] = p;
-      filtered = pengadu;
-    });
-  }
-
-  // =====================
-  // DELETE
-  // =====================
-  void hapusPengadu(String id) {
-    setState(() {
-      pengadu.removeWhere((p) => p.id == id);
-      filtered = pengadu;
-    });
-  }
-
-  // =====================
-  // UI
-  // =====================
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Kelola Pengadu"),
+  void _showDeleteDialog(int id) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Orang Tua'),
+        content: const Text('Yakin ingin menghapus data ini?'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => showForm(context),
-          )
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(context);
+              final res = await ApiService.deleteOrangtua(id);
+              if (!context.mounted) return;
+              if (res['success']) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Berhasil menghapus orang tua')),
+                );
+                _loadData();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(res['message'] ?? 'Gagal menghapus')),
+                );
+              }
+            },
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+          ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // SEARCH
-            TextField(
-              controller: searchCtrl,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                hintText: "Cari nama atau NIK...",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // LIST
-            Expanded(
-              child: filtered.isEmpty
-                  ? const Center(
-                      child: Text("Tidak ada data ditemukan"),
-                    )
-                  : ListView.builder(
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        final p = filtered[index];
-                        return Card(
-                          child: ListTile(
-                            leading: const CircleAvatar(
-                              child: Icon(Icons.person),
-                            ),
-                            title: Text(
-                              p.nama,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Text(
-                              "NIK: ${p.nik.substring(0, 6)}...${p.nik.substring(p.nik.length - 4)}",
-                            ),
-                            trailing: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.more_vert, size: 18),
-                                Text(
-                                  p.tanggalDaftar,
-                                  style: const TextStyle(fontSize: 10),
-                                )
-                              ],
-                            ),
-                            onTap: () =>
-                                showDetail(context, p),
-                          ),
-                        );
-                      },
-                    ),
-            )
-          ],
-        ),
-      ),
     );
   }
 
-  // =====================
-  // FORM TAMBAH
-  // =====================
-  void showForm(BuildContext context) {
-    final namaCtrl = TextEditingController();
-    final nikCtrl = TextEditingController();
-    final alamatCtrl = TextEditingController();
-    final telpCtrl = TextEditingController();
-    final emailCtrl = TextEditingController();
+  void showForm(BuildContext context, {Map<String, dynamic>? data}) {
+    final bool isEdit = data != null;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "Daftarkan Pengadu Baru",
-                style:
-                    TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              input(namaCtrl, "Nama Lengkap *"),
-              input(nikCtrl, "NIK *"),
-              input(alamatCtrl, "Alamat"),
-              input(telpCtrl, "No. Telepon"),
-              input(emailCtrl, "Email"),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () {
-                  if (namaCtrl.text.isEmpty ||
-                      nikCtrl.text.isEmpty) return;
-
-                  tambahPengadu(
-                    Pengadu(
-                      id: "PD${pengadu.length + 1}",
-                      nama: namaCtrl.text,
-                      nik: nikCtrl.text,
-                      alamat: alamatCtrl.text,
-                      telepon: telpCtrl.text,
-                      email: emailCtrl.text,
-                      tanggalDaftar:
-                          DateTime.now().toString().split(" ")[0],
-                    ),
-                  );
-                  Navigator.pop(context);
-                },
-                child: const Text("Daftarkan Pengadu"),
-              )
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  // =====================
-  // DETAIL / EDIT
-  // =====================
-  void showDetail(BuildContext context, Pengadu p) {
-    bool editMode = false;
-
-    final namaCtrl = TextEditingController(text: p.nama);
-    final nikCtrl = TextEditingController(text: p.nik);
-    final alamatCtrl = TextEditingController(text: p.alamat);
-    final telpCtrl = TextEditingController(text: p.telepon);
-    final emailCtrl = TextEditingController(text: p.email);
+    final namaCtrl = TextEditingController(text: isEdit ? data['User']['nama_lengkap'] : '');
+    final usernameCtrl = TextEditingController(text: isEdit ? data['User']['username'] : '');
+    final passwordCtrl = TextEditingController();
+    final emailCtrl = TextEditingController(text: isEdit ? data['User']['email'] : '');
+    final noHpCtrl = TextEditingController(text: isEdit ? data['User']['no_hp'] : '');
+    final kelasCtrl = TextEditingController(text: isEdit ? data['kelas'] : '');
+    
+    String? selectedHubungan = isEdit ? data['hubungan'] : 'ayah';
+    int? selectedSiswa = isEdit ? data['id_siswa'] : (siswaList.isNotEmpty ? siswaList[0]['id_siswa'] : null);
 
     showModalBottomSheet(
       context: context,
@@ -251,88 +117,149 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
       ),
       builder: (_) {
         return StatefulBuilder(
-          builder: (context, setModal) {
+          builder: (context, setStateModal) {
             return Padding(
               padding: EdgeInsets.only(
                 left: 16,
                 right: 16,
                 top: 16,
-                bottom:
-                    MediaQuery.of(context).viewInsets.bottom + 16,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    editMode ? "Edit Pengadu" : "Detail Pengadu",
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  editMode
-                      ? Column(
-                          children: [
-                            input(namaCtrl, "Nama"),
-                            input(nikCtrl, "NIK"),
-                            input(alamatCtrl, "Alamat"),
-                            input(telpCtrl, "Telepon"),
-                            input(emailCtrl, "Email"),
-                            ElevatedButton(
-                              onPressed: () {
-                                editPengadu(
-                                  Pengadu(
-                                    id: p.id,
-                                    nama: namaCtrl.text,
-                                    nik: nikCtrl.text,
-                                    alamat: alamatCtrl.text,
-                                    telepon: telpCtrl.text,
-                                    email: emailCtrl.text,
-                                    tanggalDaftar: p.tanggalDaftar,
-                                  ),
-                                );
-                                Navigator.pop(context);
-                              },
-                              child: const Text("Simpan Perubahan"),
-                            )
-                          ],
-                        )
-                      : Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                          children: [
-                            Text("Nama: ${p.nama}"),
-                            Text("NIK: ${p.nik}"),
-                            Text("Alamat: ${p.alamat}"),
-                            Text("Telepon: ${p.telepon}"),
-                            Text("Email: ${p.email}"),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      setModal(() => editMode = true);
-                                    },
-                                    child: const Text("Edit"),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red),
-                                    onPressed: () {
-                                      hapusPengadu(p.id);
-                                      Navigator.pop(context);
-                                    },
-                                    child: const Text("Hapus"),
-                                  ),
-                                ),
-                              ],
-                            )
-                          ],
-                        )
-                ],
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      isEdit ? "Edit Orang Tua" : "Tambah Orang Tua",
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: namaCtrl,
+                      decoration: const InputDecoration(labelText: "Nama Lengkap *", border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: usernameCtrl,
+                      decoration: const InputDecoration(labelText: "Username *", border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: passwordCtrl,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: isEdit ? "Password (Kosongi jika tidak diubah)" : "Password *",
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: emailCtrl,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(labelText: "Email *", border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: noHpCtrl,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(labelText: "No. HP", border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: kelasCtrl,
+                      decoration: const InputDecoration(labelText: "Kelas", border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(labelText: "Hubungan", border: OutlineInputBorder()),
+                      value: selectedHubungan,
+                      items: ['ayah', 'ibu', 'wali'].map((h) {
+                        return DropdownMenuItem(value: h, child: Text(h.toUpperCase()));
+                      }).toList(),
+                      onChanged: (val) {
+                        setStateModal(() => selectedHubungan = val);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(labelText: "Data Siswa", border: OutlineInputBorder()),
+                      value: selectedSiswa,
+                      items: siswaList.map((s) {
+                        return DropdownMenuItem<int>(
+                          value: s['id_siswa'],
+                          child: Text("${s['nama_siswa']} (Kelas ${s['kelas']})"),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        setStateModal(() => selectedSiswa = val);
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onPressed: () async {
+                        if (namaCtrl.text.isEmpty || usernameCtrl.text.isEmpty || emailCtrl.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Nama, Username, dan Email wajib diisi')),
+                          );
+                          return;
+                        }
+                        if (!isEdit && passwordCtrl.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Password wajib diisi untuk data baru')),
+                          );
+                          return;
+                        }
+                        if (selectedSiswa == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Data Siswa wajib dipilih')),
+                          );
+                          return;
+                        }
+
+                        final payload = {
+                          "nama_lengkap": namaCtrl.text,
+                          "username": usernameCtrl.text,
+                          "email": emailCtrl.text,
+                          "no_hp": noHpCtrl.text,
+                          "kelas": kelasCtrl.text,
+                          "hubungan": selectedHubungan,
+                          "id_siswa": selectedSiswa
+                        };
+
+                        if (passwordCtrl.text.isNotEmpty) {
+                          payload["password"] = passwordCtrl.text;
+                        }
+
+                        Navigator.pop(context);
+                        setState(() => isLoading = true);
+
+                        final res = isEdit
+                            ? await ApiService.updateOrangtua(data['id_orangtua'], payload)
+                            : await ApiService.createOrangtua(payload);
+
+                        if (!context.mounted) return;
+
+                        if (res['success']) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(isEdit ? 'Berhasil update' : 'Berhasil menambah orang tua')),
+                          );
+                          _loadData();
+                        } else {
+                          setState(() => isLoading = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(res['message'] ?? 'Terjadi kesalahan')),
+                          );
+                        }
+                      },
+                      child: const Text("Simpan Data", style: TextStyle(fontSize: 16)),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -341,19 +268,91 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
     );
   }
 
-  // =====================
-  // INPUT HELPER
-  // =====================
-  Widget input(TextEditingController c, String hint) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: TextField(
-        controller: c,
-        decoration: InputDecoration(
-          hintText: hint,
-          border: const OutlineInputBorder(),
-        ),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Kelola Orang Tua"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => showForm(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => _loadData(),
+          )
+        ],
       ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: searchCtrl,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.search),
+                      hintText: "Cari nama atau username...",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: filtered.isEmpty
+                        ? const Center(child: Text("Tidak ada data ditemukan"))
+                        : ListView.builder(
+                            itemCount: filtered.length,
+                            itemBuilder: (context, index) {
+                              final p = filtered[index];
+                              final user = p['User'] ?? {};
+                              final siswa = p['Siswa'] ?? {};
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                elevation: 2,
+                                child: InkWell(
+                                  onTap: () => showForm(context, data: p),
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 24,
+                                          backgroundColor: Colors.blue.shade100,
+                                          child: const Icon(Icons.person, color: Colors.blue),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                user['nama_lengkap'] ?? 'Tanpa Nama',
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text("Username: ${user['username'] ?? '-'}"),
+                                              Text("Siswa: ${siswa['nama_siswa'] ?? '-'} (${p['hubungan']?.toUpperCase() ?? '-'})"),
+                                            ],
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                          onPressed: () => _showDeleteDialog(p['id_orangtua']),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  )
+                ],
+              ),
+            ),
     );
   }
 }

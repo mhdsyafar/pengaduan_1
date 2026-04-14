@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
 class PengaduanPage extends StatefulWidget {
   const PengaduanPage({super.key});
@@ -29,21 +30,47 @@ class _PengaduanPageState extends State<PengaduanPage> {
       kategori.isNotEmpty &&
       deskripsiController.text.trim().isNotEmpty;
 
-  void handleSubmit() {
+  bool isLoading = false;
+  
+  Future<void> handleSubmit() async {
     if (!isValid) return;
 
     setState(() {
-      isSubmitted = true;
+      isLoading = true;
     });
 
-    Timer(const Duration(milliseconds: 2500), () {
-      judulController.clear();
-      deskripsiController.clear();
-      kategori = '';
+    final String finalIsi = "[Kategori: $kategori]\n\n${deskripsiController.text.trim()}";
+
+    final result = await ApiService.createPengaduan(
+      judulController.text.trim(),
+      finalIsi,
+    );
+
+    if (!mounted) return;
+
+    if (result['success'] == true) {
       setState(() {
-        isSubmitted = false;
+        isSubmitted = true;
+        isLoading = false;
       });
-    });
+
+      Timer(const Duration(milliseconds: 2500), () {
+        if (!mounted) return;
+        judulController.clear();
+        deskripsiController.clear();
+        setState(() {
+          kategori = '';
+          isSubmitted = false;
+        });
+      });
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'] ?? 'Gagal membuat pengaduan')),
+      );
+    }
   }
 
   @override
@@ -78,7 +105,7 @@ class _PengaduanPageState extends State<PengaduanPage> {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.15),
+              color: Colors.green.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -243,11 +270,13 @@ class _PengaduanPageState extends State<PengaduanPage> {
             width: double.infinity,
             height: 48,
             child: ElevatedButton.icon(
-              onPressed: isValid ? handleSubmit : null,
-              icon: const Icon(Icons.send, size: 18),
-              label: const Text(
-                'Kirim Pengaduan',
-                style: TextStyle(fontWeight: FontWeight.w600),
+              onPressed: (isValid && !isLoading) ? handleSubmit : null,
+              icon: isLoading
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.send, size: 18),
+              label: Text(
+                isLoading ? 'Mengirim...' : 'Kirim Pengaduan',
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ),

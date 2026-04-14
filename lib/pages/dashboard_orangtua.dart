@@ -1,67 +1,91 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+import '../models/models.dart';
 import 'pengaduan_page.dart';
 
-class Pengaduan {
-  final String judul;
-  final String kategori;
-  final String tanggal;
-  final String status;
-
-  Pengaduan({
-    required this.judul,
-    required this.kategori,
-    required this.tanggal,
-    required this.status,
-  });
-}
-
-class DashboardOrangTua extends StatelessWidget {
+class DashboardOrangTua extends StatefulWidget {
   final VoidCallback? onAddTap;
   const DashboardOrangTua({super.key, this.onAddTap});
 
+  @override
+  State<DashboardOrangTua> createState() => _DashboardOrangTuaState();
+}
+
+class _DashboardOrangTuaState extends State<DashboardOrangTua> {
   static const Color _primary = Color(0xFF2F4AC2);
+  
+  Map<String, dynamic>? userData;
+  List<Pengaduan> listPengaduan = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    final user = await ApiService.getUserData();
+    final pengaduanResponse = await ApiService.getAllPengaduan();
+    
+    List<Pengaduan> mappedAduan = [];
+    if (pengaduanResponse['success'] == true) {
+      mappedAduan = (pengaduanResponse['data'] as List)
+          .map((item) => Pengaduan.fromJson(item))
+          .toList();
+    }
+    
+    setState(() {
+      userData = user;
+      listPengaduan = mappedAduan;
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    const String namaOrtu = "Ahmad Hidayat";
-    const String kelasAnak = "5A";
+    if (isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF0F2FF),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-    final List<Pengaduan> listPengaduan = [
-      Pengaduan(judul: "AC Kelas Tidak Berfungsi", kategori: "Fasilitas", tanggal: "5 Feb 2026", status: "diproses"),
-      Pengaduan(judul: "Perundungan di Kelas", kategori: "Kedisiplinan", tanggal: "4 Feb 2026", status: "menunggu"),
-      Pengaduan(judul: "Lampu Mati", kategori: "Fasilitas", tanggal: "2 Feb 2026", status: "selesai"),
-      Pengaduan(judul: "Kipas Rusak", kategori: "Fasilitas", tanggal: "1 Feb 2026", status: "selesai"),
-      Pengaduan(judul: "Toilet Kotor", kategori: "Kebersihan", tanggal: "30 Jan 2026", status: "diproses"),
-    ];
+    final String namaOrtu = userData?['nama_lengkap'] ?? userData?['username'] ?? "Orang Tua";
+    const String kelasAnak = "Siswa";
 
     final total = listPengaduan.length;
-    final menunggu = listPengaduan.where((e) => e.status == "menunggu").length;
-    final diproses = listPengaduan.where((e) => e.status == "diproses").length;
-    final selesai = listPengaduan.where((e) => e.status == "selesai").length;
+    final menunggu = listPengaduan.where((e) => e.status == StatusPengaduan.masuk).length;
+    final diproses = listPengaduan.where((e) => e.status == StatusPengaduan.diproses).length;
+    final selesai = listPengaduan.where((e) => e.status == StatusPengaduan.selesai).length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2FF),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeader(context, namaOrtu, kelasAnak),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 4),
-                  _buildStatGrid(menunggu, diproses, selesai),
-                  const SizedBox(height: 20),
-                  _buildTotalBar(total, selesai),
-                  const SizedBox(height: 24),
-                  const Text('Laporan Anda', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1C1C3A))),
-                  const SizedBox(height: 12),
-                  _buildList(listPengaduan.take(3).toList()),
-                ],
+      body: RefreshIndicator(
+        onRefresh: _fetchData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              _buildHeader(context, namaOrtu, kelasAnak),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 4),
+                    _buildStatGrid(menunggu, diproses, selesai),
+                    const SizedBox(height: 20),
+                    _buildTotalBar(total, selesai),
+                    const SizedBox(height: 24),
+                    const Text('Laporan Anda', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1C1C3A))),
+                    const SizedBox(height: 12),
+                    _buildList(listPengaduan.take(3).toList()),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -128,11 +152,13 @@ class DashboardOrangTua extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               GestureDetector(
-                onTap: () {
-                  if (onAddTap != null) {
-                    onAddTap!();
+                onTap: () async {
+                  if (widget.onAddTap != null) {
+                    widget.onAddTap!();
                   } else {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PengaduanPage()));
+                    await Navigator.push(context, MaterialPageRoute(builder: (_) => const PengaduanPage()));
+                    // Refresh data after returning
+                    _fetchData();
                   }
                 },
                 child: Container(
@@ -216,6 +242,8 @@ class DashboardOrangTua extends StatelessWidget {
               const SizedBox(width: 8),
               const Text("Total Pengaduan", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
               const Spacer(),
+              Text('$persen%', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+              const SizedBox(width: 8),
               Text(total.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _primary)),
             ],
           ),
@@ -223,10 +251,10 @@ class DashboardOrangTua extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
-              value: persen / 100,
+               value: total > 0 ? (selesai / total) : 0,
               minHeight: 8,
               backgroundColor: Colors.grey.shade100,
-              valueColor: AlwaysStoppedAnimation<Color>(persen >= 100 ? const Color(0xFF2F9E44) : _primary),
+              valueColor: AlwaysStoppedAnimation<Color>((total > 0 && selesai == total) ? const Color(0xFF2F9E44) : _primary),
             ),
           ),
         ],
@@ -236,6 +264,19 @@ class DashboardOrangTua extends StatelessWidget {
 
   // ======================== LIST ========================
   Widget _buildList(List<Pengaduan> list) {
+    if (list.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12)],
+        ),
+        child: const Center(
+          child: Text('Belum ada laporan terbaru', style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -248,15 +289,18 @@ class DashboardOrangTua extends StatelessWidget {
           final p = e.value;
           Color color;
           String label;
-          if (p.status == "diproses") {
+          if (p.status == StatusPengaduan.diproses) {
             color = const Color(0xFF3B5BDB);
             label = "Diproses";
-          } else if (p.status == "selesai") {
+          } else if (p.status == StatusPengaduan.selesai) {
             color = const Color(0xFF2F9E44);
             label = "Selesai";
+          } else if (p.status == StatusPengaduan.ditolak) {
+            color = const Color(0xFFE03131);
+            label = "Ditolak";
           } else {
             color = const Color(0xFFEA6C00);
-            label = "Menunggu";
+            label = "Masuk";
           }
           return Column(
             children: [
@@ -278,7 +322,7 @@ class DashboardOrangTua extends StatelessWidget {
                       child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
                     ),
                     const SizedBox(height: 4),
-                    Text(p.tanggal, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                    Text(p.tanggal.substring(0, 10), style: const TextStyle(fontSize: 10, color: Colors.grey)),
                   ],
                 ),
               ),

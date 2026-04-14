@@ -1,78 +1,82 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+import '../models/models.dart';
 
-class Pengaduan {
-  final String nama;
-  final String kategori;
-  final String deskripsi;
-  final String tanggal;
-  final String status;
-
-  Pengaduan({
-    required this.nama,
-    required this.kategori,
-    required this.deskripsi,
-    required this.tanggal,
-    required this.status,
-  });
-}
-
-class DashboardGuru extends StatelessWidget {
+class DashboardGuru extends StatefulWidget {
   const DashboardGuru({super.key});
 
-  static const Color _primary = Color(0xFF0D9488);
+  @override
+  State<DashboardGuru> createState() => _DashboardGuruState();
+}
+
+class _DashboardGuruState extends State<DashboardGuru> {
+  Map<String, dynamic>? userData;
+  List<Pengaduan> listPengaduan = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    final user = await ApiService.getUserData();
+    final pengaduanResponse = await ApiService.getAllPengaduan();
+
+    List<Pengaduan> mappedAduan = [];
+    if (pengaduanResponse['success'] == true) {
+      mappedAduan = (pengaduanResponse['data'] as List)
+          .map((item) => Pengaduan.fromJson(item))
+          .toList();
+    }
+
+    setState(() {
+      userData = user;
+      listPengaduan = mappedAduan;
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<Pengaduan> pengaduanList = [
-      Pengaduan(
-        nama: "Ahmad",
-        kategori: "Bullying",
-        deskripsi: "Terjadi perundungan di kelas",
-        tanggal: "05 Feb 2026",
-        status: "baru",
-      ),
-      Pengaduan(
-        nama: "Siti",
-        kategori: "Fasilitas",
-        deskripsi: "Kipas angin rusak",
-        tanggal: "04 Feb 2026",
-        status: "diproses",
-      ),
-      Pengaduan(
-        nama: "Budi",
-        kategori: "Akademik",
-        deskripsi: "Metode pembelajaran kurang dipahami",
-        tanggal: "03 Feb 2026",
-        status: "selesai",
-      ),
-    ];
+    if (isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF0FDFA),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-    final total = pengaduanList.length;
-    final baru = pengaduanList.where((e) => e.status == "baru").length;
-    final diproses = pengaduanList.where((e) => e.status == "diproses").length;
-    final selesai = pengaduanList.where((e) => e.status == "selesai").length;
+    final total = listPengaduan.length;
+    final baru = listPengaduan.where((e) => e.status == StatusPengaduan.masuk).length;
+    final diproses = listPengaduan.where((e) => e.status == StatusPengaduan.diproses).length;
+    final selesai = listPengaduan.where((e) => e.status == StatusPengaduan.selesai).length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0FDFA),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeader(context),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 4),
-                  _buildStatGrid(total, baru, diproses, selesai),
-                  const SizedBox(height: 24),
-                  const Text('Tugas Terbaru', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1C1C3A))),
-                  const SizedBox(height: 12),
-                  _buildList(pengaduanList),
-                ],
+      body: RefreshIndicator(
+        onRefresh: _fetchData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              _buildHeader(context),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 4),
+                    _buildStatGrid(total, baru, diproses, selesai),
+                    const SizedBox(height: 24),
+                    const Text('Tugas Terbaru', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1C1C3A))),
+                    const SizedBox(height: 12),
+                    _buildList(listPengaduan.take(5).toList()),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -92,6 +96,8 @@ class DashboardGuru extends StatelessWidget {
     } else {
       greeting = 'Selamat Malam';
     }
+
+    final String namaLengkap = userData?['nama_lengkap'] ?? userData?['username'] ?? "Guru Pengajar";
 
     return Container(
       width: double.infinity,
@@ -117,11 +123,11 @@ class DashboardGuru extends StatelessWidget {
                     children: [
                       Text('$greeting,', style: const TextStyle(color: Colors.white70, fontSize: 14)),
                       const SizedBox(height: 2),
-                      const Text(
-                        'Guru Pengajar',
-                        style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                      Text(
+                        namaLengkap,
+                        style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                       ),
-                      const Text('Wali Kelas 10A', style: TextStyle(color: Colors.white60, fontSize: 13)),
+                      const Text('Guru Pengajar', style: TextStyle(color: Colors.white60, fontSize: 13)),
                     ],
                   ),
                   Container(
@@ -194,6 +200,20 @@ class DashboardGuru extends StatelessWidget {
 
   // ======================== LIST ========================
   Widget _buildList(List<Pengaduan> list) {
+    if (list.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12)],
+        ),
+        child: const Center(
+          child: Text('Belum ada laporan terbaru', style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
+    
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -206,14 +226,17 @@ class DashboardGuru extends StatelessWidget {
           final p = e.value;
           Color color;
           String label;
-          if (p.status == "diproses") {
+          if (p.status == StatusPengaduan.diproses) {
             color = const Color(0xFF3B5BDB);
             label = "Diproses";
-          } else if (p.status == "selesai") {
+          } else if (p.status == StatusPengaduan.selesai) {
             color = const Color(0xFF2F9E44);
             label = "Selesai";
-          } else {
+          } else if (p.status == StatusPengaduan.ditolak) {
             color = const Color(0xFFE03131);
+            label = "Ditolak";
+          } else {
+            color = const Color(0xFFEA6C00);
             label = "Baru";
           }
           return Column(
@@ -224,8 +247,8 @@ class DashboardGuru extends StatelessWidget {
                   decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
                   child: Icon(Icons.description_rounded, color: color, size: 20),
                 ),
-                title: Text(p.deskripsi, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
-                subtitle: Text('${p.nama} • ${p.kategori}', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                title: Text(p.judul, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                subtitle: Text('${p.namaPengadu} • ${p.kategori}', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                 trailing: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -236,7 +259,7 @@ class DashboardGuru extends StatelessWidget {
                       child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
                     ),
                     const SizedBox(height: 4),
-                    Text(p.tanggal, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                    Text(p.tanggal.substring(0, 10), style: const TextStyle(fontSize: 10, color: Colors.grey)),
                   ],
                 ),
               ),

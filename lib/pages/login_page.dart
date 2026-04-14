@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../data/dummy_user.dart';
+import '../services/api_service.dart';
 import 'navbar_tu.dart';
 import 'navbar_kepsek.dart';
 import 'navbar_guru.dart';
@@ -13,39 +13,69 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final emailController = TextEditingController();
+  final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
 
   void login() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 600));
 
-    String email = emailController.text.trim();
+    String username = usernameController.text.trim();
     String password = passwordController.text;
 
-    for (var u in user) {
-      if (u['email'] == email && u['password'] == password) {
-        if (!mounted) return;
-        if (u['role'] == 'guru') {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const NavbarGuru()));
-        } else if (u['role'] == 'tu') {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const NavbarTU()));
-        } else if (u['role'] == 'kepsek') {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const NavbarKepsek()));
-        } else if (u['role'] == 'orangtua') {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const NavbarOrangTua()));
-        }
-        return;
-      }
-    }
-
-    if (mounted) {
+    if (username.isEmpty || password.isEmpty) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Email atau Password salah'),
+          content: const Text('Username dan Password harus diisi'),
+          backgroundColor: Colors.orange.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+      return;
+    }
+
+    final result = await ApiService.login(username, password);
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (result['success'] == true) {
+      final userData = result['data'];
+      final int idRole = userData['id_role'];
+
+      Widget destination;
+      // 1=admin(tu), 2=guru, 3=orangtua, 4=kepsek
+      if (idRole == 1) {
+        destination = const NavbarTU();
+      } else if (idRole == 2) {
+        destination = const NavbarGuru();
+      } else if (idRole == 3) {
+        destination = const NavbarOrangTua();
+      } else if (idRole == 4) {
+        destination = const NavbarKepsek();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Role tidak dikenali'),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+        return;
+      }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => destination),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Login gagal'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -56,7 +86,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    emailController.dispose();
+    usernameController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -85,9 +115,9 @@ class _LoginPageState extends State<LoginPage> {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.4), width: 2),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
                     ),
                     child: const Icon(Icons.school_rounded, size: 44, color: Colors.white),
                   ),
@@ -108,7 +138,7 @@ class _LoginPageState extends State<LoginPage> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 30, offset: const Offset(0, 12)),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 30, offset: const Offset(0, 12)),
                       ],
                     ),
                     padding: const EdgeInsets.all(28),
@@ -120,16 +150,16 @@ class _LoginPageState extends State<LoginPage> {
                         Text('Silakan login sesuai peran Anda', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
                         const SizedBox(height: 24),
 
-                        // Email field
-                        const Text('Email', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1C1C3A))),
+                        // Username field
+                        const Text('Username', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1C1C3A))),
                         const SizedBox(height: 6),
                         TextField(
-                          controller: emailController,
-                          keyboardType: TextInputType.emailAddress,
+                          controller: usernameController,
+                          keyboardType: TextInputType.text,
                           decoration: InputDecoration(
-                            hintText: 'contoh@sekolah.com',
+                            hintText: 'Masukkan username',
                             hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                            prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade400, size: 20),
+                            prefixIcon: Icon(Icons.person_outline, color: Colors.grey.shade400, size: 20),
                             filled: true,
                             fillColor: const Color(0xFFF5F7FF),
                             border: OutlineInputBorder(
@@ -214,21 +244,21 @@ class _LoginPageState extends State<LoginPage> {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.12),
+                      color: Colors.white.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('Akun Demo:', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 6),
-                        _hintRow('Guru', 'guru@gmail.com'),
-                        _hintRow('Orang Tua', 'ortu@gmail.com'),
-                        _hintRow('Tata Usaha', 'tu@gmail.com'),
-                        _hintRow('Kepala Sekolah', 'kepsek@gmail.com'),
+                        _hintRow('Admin/TU', 'admin2'),
+                        _hintRow('Guru', 'guru_budi'),
+                        _hintRow('Orang Tua', 'ortu_rahman'),
+                        _hintRow('Kepala Sekolah', 'kepsek1'),
                         const SizedBox(height: 4),
-                        const Text('Password semua: 123456', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                        const Text('Password semua: password123', style: TextStyle(color: Colors.white60, fontSize: 11)),
                       ],
                     ),
                   ),

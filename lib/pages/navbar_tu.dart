@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'dashboard_TU.dart';
+import 'dashboard_tu.dart';
 import 'data_pengaduan.dart';
 import 'kelola_pengadu.dart';
 import 'kelola_petugas.dart';
 import 'profil_tu.dart';
-import '../data/dummy_tu.dart';
 
 class NavbarTU extends StatefulWidget {
   const NavbarTU({super.key});
@@ -26,26 +25,18 @@ class _NavbarTUState extends State<NavbarTU> {
   static const _navItems = [
     _NavItem(Icons.dashboard_rounded, Icons.dashboard_outlined, 'Dashboard'),
     _NavItem(Icons.inbox_rounded, Icons.inbox_outlined, 'Pengaduan'),
-    _NavItem(Icons.people_rounded, Icons.people_outlined, 'Pengadu'),
+    _NavItem(Icons.people_rounded, Icons.people_outlined, 'Orang Tua'),
     _NavItem(Icons.badge_rounded, Icons.badge_outlined, 'Petugas'),
     _NavItem(Icons.person_rounded, Icons.person_outlined, 'Profil'),
   ];
 
   List<Widget> get _pages => [
-        DashboardTU(
-          petugas: dummyPetugas,
-          pengadu: dummyPengadu,
-          pengaduan: dummyPengaduan,
-          onNavigate: _navigateTo,
-        ),
-        DataPengaduan(pengaduan: List.from(dummyPengaduan)),
-        const KelolaPengaduPage(),
-        KelolaPetugasPage(
-          petugas: List.from(dummyPetugas),
-          setPetugas: (_) {},
-        ),
-        const ProfilTUPage(),
-      ];
+    DashboardTU(onNavigate: _navigateTo),
+    const DataPengaduan(),
+    const KelolaPengaduPage(),
+    const KelolaPetugasPage(),
+    const ProfilTUPage(),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +52,7 @@ class _NavbarTUState extends State<NavbarTU> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: _primary.withOpacity(0.10),
+            color: _primary.withValues(alpha: 0.10),
             blurRadius: 24,
             offset: const Offset(0, -4),
           ),
@@ -90,7 +81,7 @@ class _NavbarTUState extends State<NavbarTU> {
         curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? _primary.withOpacity(0.12) : Colors.transparent,
+          color: active ? _primary.withValues(alpha: 0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(

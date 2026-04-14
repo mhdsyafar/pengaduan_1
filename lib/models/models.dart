@@ -66,4 +66,36 @@ class Pengaduan {
     required this.tanggal,
     required this.prioritas,
   });
+
+  factory Pengaduan.fromJson(Map<String, dynamic> json) {
+    // Map string status to enum
+    StatusPengaduan parseStatus(String? st) {
+      switch (st) {
+        case 'diajukan': return StatusPengaduan.masuk;
+        case 'diproses': return StatusPengaduan.diproses;
+        case 'selesai': return StatusPengaduan.selesai;
+        case 'ditolak': return StatusPengaduan.ditolak;
+        default: return StatusPengaduan.masuk;
+      }
+    }
+
+    String getNamaPengadu() {
+      if (json['Orangtua'] != null && json['Orangtua']['User'] != null) {
+        return json['Orangtua']['User']['nama_lengkap'] ?? 'Anonim';
+      }
+      return 'Anonim';
+    }
+
+    return Pengaduan(
+      id: json['id_pengaduan']?.toString() ?? '',
+      pengaduId: json['id_orangtua']?.toString() ?? '',
+      namaPengadu: getNamaPengadu(),
+      judul: json['judul_pengaduan'] ?? 'Tanpa Judul',
+      isi: json['isi_pengaduan'] ?? '',
+      kategori: 'Umum', // Backend tidak menyimpan kategori saat ini
+      status: parseStatus(json['status']),
+      tanggal: json['tanggal_pengaduan'] ?? '',
+      prioritas: Prioritas.sedang, // Backend tidak menyimpan prioritas
+    );
+  }
 }

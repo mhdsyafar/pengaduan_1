@@ -1,6 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import '../services/api_service.dart';
 import 'login_page.dart';
 
 /* =======================
@@ -41,18 +40,19 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
     futureUser = fetchUser();
   }
 
-  /* =======================
-     API CALL
-  ======================= */
   Future<User> fetchUser() async {
-    final response = await http.get(
-      Uri.parse('http://10.0.2.2:3000/api/user/1'),
-    );
+    final result = await ApiService.getMe();
 
-    if (response.statusCode == 200) {
-      return User.fromJson(jsonDecode(response.body));
+    if (result['success'] == true) {
+      // API backend me-return 'nama_lengkap', sedangkan model User menggunakan 'namaguru' (sepertinya).
+      // Oleh karena itu saya map dari 'nama_lengkap' ke 'namaguru' agar sesuai.
+      final data = result['data'];
+      return User(
+        id: data['id_user'], 
+        namaguru: data['nama_lengkap'] ?? data['username'],
+      );
     } else {
-      throw Exception('Gagal memuat data user');
+      throw Exception(result['message']);
     }
   }
 
@@ -263,7 +263,9 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
           backgroundColor: Colors.red,
           padding: const EdgeInsets.symmetric(vertical: 14),
         ),
-        onPressed: () {
+        onPressed: () async {
+          await ApiService.logout();
+          if (!mounted) return;
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const LoginPage()),

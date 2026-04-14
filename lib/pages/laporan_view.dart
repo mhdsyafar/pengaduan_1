@@ -65,7 +65,7 @@ class _LaporanViewState extends State<LaporanView> {
                           color: isActive ? _primary : Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: isActive ? _primary : Colors.grey.shade300),
-                          boxShadow: isActive ? [BoxShadow(color: _primary.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 2))] : [],
+                          boxShadow: isActive ? [BoxShadow(color: _primary.withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 2))] : [],
                         ),
                         child: Text(
                           f,
@@ -100,7 +100,7 @@ class _LaporanViewState extends State<LaporanView> {
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     itemCount: _filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, i) {
                       final l = _filtered[i];
                       final color = l['color'] as Color;
@@ -111,7 +111,7 @@ class _LaporanViewState extends State<LaporanView> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(14),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
                             border: Border(left: BorderSide(color: color, width: 4)),
                           ),
                           child: Row(
@@ -119,7 +119,7 @@ class _LaporanViewState extends State<LaporanView> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(color: color.withOpacity(0.10), borderRadius: BorderRadius.circular(10)),
+                                decoration: BoxDecoration(color: color.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(10)),
                                 child: Icon(l['icon'] as IconData, color: color, size: 20),
                               ),
                               const SizedBox(width: 12),
@@ -144,7 +144,7 @@ class _LaporanViewState extends State<LaporanView> {
                               const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
+                                decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
                                 child: Text(l['status'] as String, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700)),
                               ),
                             ],
@@ -170,7 +170,7 @@ class _LaporanViewState extends State<LaporanView> {
           Row(children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
               child: Text(l['status'] as String, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
             ),
             const Spacer(),

@@ -72,15 +72,15 @@ class StatisticsView extends StatelessWidget {
             margin: EdgeInsets.only(right: items.indexOf(e) < items.length - 1 ? 8 : 0),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.10),
+              color: color.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: color.withOpacity(0.2)),
+              border: Border.all(color: color.withValues(alpha: 0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(e['value'] as String, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
-                Text(e['label'] as String, style: TextStyle(fontSize: 10, color: color.withOpacity(0.7))),
+                Text(e['label'] as String, style: TextStyle(fontSize: 10, color: color.withValues(alpha: 0.7))),
               ],
             ),
           ),
@@ -119,7 +119,7 @@ class StatisticsView extends StatelessWidget {
                     Text(values[i].toString(), style: const TextStyle(fontSize: 9, color: Colors.grey)),
                     const SizedBox(height: 2),
                     Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      Container(width: 12, height: h, decoration: BoxDecoration(color: _primary.withOpacity(0.3), borderRadius: BorderRadius.circular(4))),
+                      Container(width: 12, height: h, decoration: BoxDecoration(color: _primary.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(4))),
                       const SizedBox(width: 2),
                       Container(width: 12, height: doneH, decoration: BoxDecoration(color: const Color(0xFF2F9E44), borderRadius: BorderRadius.circular(4))),
                     ]),
@@ -166,7 +166,7 @@ class StatisticsView extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: pct,
                       minHeight: 6,
-                      backgroundColor: color.withOpacity(0.12),
+                      backgroundColor: color.withValues(alpha: 0.12),
                       valueColor: AlwaysStoppedAnimation<Color>(color),
                     ),
                   ),
@@ -236,7 +236,7 @@ class StatisticsView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

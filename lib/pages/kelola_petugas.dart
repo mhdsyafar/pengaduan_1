@@ -1,123 +1,116 @@
 import 'package:flutter/material.dart';
-import '../models/models.dart';
+import '../services/api_service.dart';
 
-// =====================
-// PAGE
-// =====================
 class KelolaPetugasPage extends StatefulWidget {
-  final List<Petugas> petugas;
-  final Function(List<Petugas>) setPetugas;
-
-  const KelolaPetugasPage({
-    super.key,
-    required this.petugas,
-    required this.setPetugas,
-  });
+  const KelolaPetugasPage({super.key});
 
   @override
   State<KelolaPetugasPage> createState() => _KelolaPetugasPageState();
 }
 
 class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
-  final searchCtrl = TextEditingController();
+  final TextEditingController searchCtrl = TextEditingController();
 
-  Petugas? selected;
-  bool showForm = false;
-  bool editMode = false;
+  List<dynamic> users = [];
+  List<dynamic> filtered = [];
+  bool isLoading = true;
 
-  final namaCtrl = TextEditingController();
-  final nipCtrl = TextEditingController();
-  final jabatanCtrl = TextEditingController();
-  final emailCtrl = TextEditingController();
-  final telpCtrl = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    searchCtrl.addListener(_onSearch);
+    _loadData();
+  }
 
-  List<Petugas> get filtered {
+  Future<void> _loadData() async {
+    setState(() => isLoading = true);
+    final res = await ApiService.getAllUsers();
+    
+    if (res['success']) {
+      setState(() {
+        // Filter out orangtua (id_role = 3) as per request "kelola user selain orangtua"
+        users = (res['data'] as List).where((u) => u['id_role'] != 3).toList();
+        filtered = users;
+      });
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? 'Gagal memuat pengguna')),
+        );
+      }
+    }
+    setState(() => isLoading = false);
+  }
+
+  void _onSearch() {
     final q = searchCtrl.text.toLowerCase();
-    return widget.petugas.where((p) {
-      return p.nama.toLowerCase().contains(q) ||
-          p.nip.contains(q) ||
-          p.jabatan.toLowerCase().contains(q);
-    }).toList();
+    setState(() {
+      filtered = users.where((u) {
+        final nama = u['nama_lengkap']?.toLowerCase() ?? '';
+        final username = u['username']?.toLowerCase() ?? '';
+        return nama.contains(q) || username.contains(q);
+      }).toList();
+    });
   }
 
-  // =====================
-  // ADD
-  // =====================
-  void addPetugas() {
-    if (namaCtrl.text.isEmpty || nipCtrl.text.isEmpty) return;
+  String _getRoleName(int idRole) {
+    switch (idRole) {
+      case 1: return 'Admin / TU';
+      case 2: return 'Guru';
+      case 4: return 'Kepala Sekolah';
+      default: return 'User';
+    }
+  }
 
-    final newPetugas = Petugas(
-      id: "P${(widget.petugas.length + 1).toString().padLeft(3, '0')}",
-      nama: namaCtrl.text,
-      nip: nipCtrl.text,
-      jabatan: jabatanCtrl.text,
-      email: emailCtrl.text,
-      telepon: telpCtrl.text,
-      status: StatusPetugas.aktif,
-      tanggalDibuat: DateTime.now().toString().split(" ")[0],
+  void _showDeleteDialog(int id) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Pengguna'),
+        content: const Text('Yakin ingin menghapus data ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(context);
+              setState(() => isLoading = true);
+              final res = await ApiService.deleteUser(id);
+              if (!context.mounted) return;
+              if (res['success']) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Berhasil menghapus pengguna')),
+                );
+                _loadData();
+              } else {
+                setState(() => isLoading = false);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(res['message'] ?? 'Gagal menghapus')),
+                );
+              }
+            },
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
-
-    widget.setPetugas([...widget.petugas, newPetugas]);
-    clearForm();
-    Navigator.pop(context);
   }
 
-  // =====================
-  // EDIT
-  // =====================
-  void saveEdit() {
-    if (selected == null) return;
+  void showForm(BuildContext context, {Map<String, dynamic>? data}) {
+    final bool isEdit = data != null;
 
-    widget.setPetugas(
-      widget.petugas.map((p) {
-        if (p.id == selected!.id) {
-          return Petugas(
-            id: p.id,
-            nama: namaCtrl.text,
-            nip: nipCtrl.text,
-            jabatan: jabatanCtrl.text,
-            email: emailCtrl.text,
-            telepon: telpCtrl.text,
-            status: p.status,
-            tanggalDibuat: p.tanggalDibuat,
-          );
-        }
-        return p;
-      }).toList(),
-    );
-
-    Navigator.pop(context);
-  }
-
-  void deletePetugas(String id) {
-    widget.setPetugas(
-      widget.petugas.where((p) => p.id != id).toList(),
-    );
-    Navigator.pop(context);
-  }
-
-  void toggleStatus(String id) {
-    widget.setPetugas(
-      widget.petugas.map((p) {
-        if (p.id == id) {
-          p.status = p.status == StatusPetugas.aktif
-              ? StatusPetugas.nonaktif
-              : StatusPetugas.aktif;
-        }
-        return p;
-      }).toList(),
-    );
-    setState(() {});
-  }
-
-  void openDetail(Petugas p) {
-    selected = p;
-    editMode = false;
-    namaCtrl.text = p.nama;
-    nipCtrl.text = p.nip;
-    jabatanCtrl.text = p.jabatan;
-    emailCtrl.text = p.email;
-    telpCtrl.text = p.telepon;
+    final namaCtrl = TextEditingController(text: isEdit ? data['nama_lengkap'] : '');
+    final usernameCtrl = TextEditingController(text: isEdit ? data['username'] : '');
+    final passwordCtrl = TextEditingController();
+    final emailCtrl = TextEditingController(text: isEdit ? data['email'] : '');
+    final noHpCtrl = TextEditingController(text: isEdit ? data['no_hp'] : '');
+    final nipCtrl = TextEditingController(text: isEdit && data['Guru'] != null ? data['Guru']['nip'] ?? '' : '');
+    final kelasCtrl = TextEditingController(text: isEdit && data['Guru'] != null ? data['Guru']['kelas'] ?? '' : '');
+    
+    int selectedRole = isEdit ? data['id_role'] : 2;
 
     showModalBottomSheet(
       context: context,
@@ -125,227 +118,245 @@ class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => buildDetailModal(),
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setStateModal) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      isEdit ? "Edit Pengguna" : "Tambah Pengguna Baru",
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: namaCtrl,
+                      decoration: const InputDecoration(labelText: "Nama Lengkap *", border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: usernameCtrl,
+                      decoration: const InputDecoration(labelText: "Username *", border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: passwordCtrl,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: isEdit ? "Password (Kosongkan jika tidak diubah)" : "Password *",
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: emailCtrl,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(labelText: "Email *", border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: noHpCtrl,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(labelText: "No. HP", border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(labelText: "Role/Peran", border: OutlineInputBorder()),
+                      value: selectedRole,
+                      items: const [
+                        DropdownMenuItem(value: 1, child: Text('Admin / TU')),
+                        DropdownMenuItem(value: 2, child: Text('Guru')),
+                        DropdownMenuItem(value: 4, child: Text('Kepala Sekolah')),
+                      ],
+                      onChanged: (val) {
+                         if (val != null) setStateModal(() => selectedRole = val);
+                      },
+                    ),
+                    // Field NIP & Kelas hanya tampil jika role = Guru
+                    if (selectedRole == 2) ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: nipCtrl,
+                        decoration: const InputDecoration(labelText: "NIP *", border: OutlineInputBorder()),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: kelasCtrl,
+                        decoration: const InputDecoration(labelText: "Kelas (Opsional)", hintText: "Misal: 6A", border: OutlineInputBorder()),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onPressed: () async {
+                        if (namaCtrl.text.isEmpty || usernameCtrl.text.isEmpty || emailCtrl.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Nama, Username, dan Email wajib diisi')),
+                          );
+                          return;
+                        }
+                        if (!isEdit && passwordCtrl.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Password wajib diisi untuk data baru')),
+                          );
+                          return;
+                        }
+                        // Validasi NIP wajib jika role Guru
+                        if (selectedRole == 2 && nipCtrl.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('NIP wajib diisi untuk role Guru')),
+                          );
+                          return;
+                        }
+
+                        final payload = {
+                          "nama_lengkap": namaCtrl.text,
+                          "username": usernameCtrl.text,
+                          "email": emailCtrl.text,
+                          "no_hp": noHpCtrl.text,
+                          "id_role": selectedRole,
+                        };
+
+                        if (passwordCtrl.text.isNotEmpty) {
+                          payload["password"] = passwordCtrl.text;
+                        }
+
+                        // Sertakan NIP & Kelas jika role Guru
+                        if (selectedRole == 2) {
+                          payload["nip"] = nipCtrl.text.trim();
+                          if (kelasCtrl.text.trim().isNotEmpty) {
+                            payload["kelas"] = kelasCtrl.text.trim();
+                          }
+                        }
+
+                        Navigator.pop(context);
+                        setState(() => isLoading = true);
+
+                        final res = isEdit
+                            ? await ApiService.updateUser(data['id_user'], payload)
+                            : await ApiService.createUser(payload);
+
+                        if (!context.mounted) return;
+
+                        if (res['success']) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(isEdit ? 'Berhasil mengupdate pengguna' : 'Berhasil menambah pengguna')),
+                          );
+                          _loadData();
+                        } else {
+                          setState(() => isLoading = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(res['message'] ?? 'Terjadi kesalahan')),
+                          );
+                        }
+                      },
+                      child: const Text("Simpan Data", style: TextStyle(fontSize: 16)),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
-  void clearForm() {
-    namaCtrl.clear();
-    nipCtrl.clear();
-    jabatanCtrl.clear();
-    emailCtrl.clear();
-    telpCtrl.clear();
-    editMode = false;
-  }
-
-  // =====================
-  // UI
-  // =====================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Kelola Petugas"),
+        title: const Text("Kelola Pengguna"),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
-              clearForm();
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                shape: const RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                builder: (_) => buildFormModal(),
-              );
-            },
+            onPressed: () => showForm(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => _loadData(),
           )
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: searchCtrl,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                hintText: "Cari nama, NIP, atau jabatan...",
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: filtered.isEmpty
-                  ? const Center(child: Text("Tidak ada data ditemukan"))
-                  : ListView.builder(
-                      itemCount: filtered.length,
-                      itemBuilder: (c, i) {
-                        final p = filtered[i];
-                        return Card(
-                          child: ListTile(
-                            leading: const CircleAvatar(
-                              child: Icon(Icons.person),
-                            ),
-                            title: Row(
-                              children: [
-                                Expanded(child: Text(p.nama)),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: p.status == StatusPetugas.aktif
-                                        ? Colors.green.shade100
-                                        : Colors.grey.shade300,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    p.status == StatusPetugas.aktif ? 'aktif' : 'nonaktif',
-                                    style: const TextStyle(fontSize: 10),
-                                  ),
-                                )
-                              ],
-                            ),
-                            subtitle:
-                                Text("${p.jabatan} • ${p.nip}"),
-                            trailing:
-                                const Icon(Icons.more_vert),
-                            onTap: () => openDetail(p),
-                          ),
-                        );
-                      },
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: searchCtrl,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.search),
+                      hintText: "Cari nama atau username...",
+                      border: OutlineInputBorder(),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: filtered.isEmpty
+                        ? const Center(child: Text("Tidak ada data ditemukan"))
+                        : ListView.builder(
+                            itemCount: filtered.length,
+                            itemBuilder: (context, index) {
+                              final u = filtered[index];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                elevation: 2,
+                                child: InkWell(
+                                  onTap: () => showForm(context, data: u),
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 24,
+                                          backgroundColor: Colors.indigo.shade100,
+                                          child: const Icon(Icons.person, color: Colors.indigo),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                u['nama_lengkap'] ?? 'Tanpa Nama',
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text("Username: ${u['username'] ?? '-'}"),
+                                              Text("Peran: ${_getRoleName(u['id_role'])}", style: const TextStyle(color: Colors.blue)),
+                                            ],
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                          onPressed: () => _showDeleteDialog(u['id_user']),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  )
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // =====================
-  // FORM MODAL
-  // =====================
-  Widget buildFormModal() {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            "Tambah Petugas Baru",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          input(namaCtrl, "Nama Lengkap *"),
-          input(nipCtrl, "NIP *"),
-          input(jabatanCtrl, "Jabatan"),
-          input(emailCtrl, "Email"),
-          input(telpCtrl, "No. Telepon"),
-          ElevatedButton(
-            onPressed: addPetugas,
-            child: const Text("Simpan Petugas"),
-          )
-        ],
-      ),
-    );
-  }
-
-  // =====================
-  // DETAIL MODAL
-  // =====================
-  Widget buildDetailModal() {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            editMode ? "Edit Petugas" : "Detail Petugas",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          editMode
-              ? Column(
-                  children: [
-                    input(namaCtrl, "Nama"),
-                    input(nipCtrl, "NIP"),
-                    input(jabatanCtrl, "Jabatan"),
-                    input(emailCtrl, "Email"),
-                    input(telpCtrl, "Telepon"),
-                    ElevatedButton(
-                      onPressed: saveEdit,
-                      child: const Text("Simpan Perubahan"),
-                    )
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Nama: ${selected!.nama}"),
-                    Text("Jabatan: ${selected!.jabatan}"),
-                    Text("NIP: ${selected!.nip}"),
-                    Text("Email: ${selected!.email}"),
-                    Text("Telepon: ${selected!.telepon}"),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () =>
-                                setState(() => editMode = true),
-                            child: const Text("Edit"),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () =>
-                                toggleStatus(selected!.id),
-                            child: Text(selected!.status == StatusPetugas.aktif
-                                ? "Nonaktifkan"
-                                : "Aktifkan"),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red),
-                          onPressed: () =>
-                              deletePetugas(selected!.id),
-                          child: const Text("Hapus"),
-                        ),
-                      ],
-                    )
-                  ],
-                ),
-        ],
-      ),
-    );
-  }
-
-  Widget input(TextEditingController c, String hint) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: TextField(
-        controller: c,
-        decoration: InputDecoration(
-          hintText: hint,
-          border: const OutlineInputBorder(),
-        ),
-      ),
     );
   }
 }

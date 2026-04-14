@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 import 'login_page.dart';
 
 enum SubScreen {
@@ -265,7 +266,9 @@ class _ProfilTUPageState extends State<ProfilTUPage> {
         ElevatedButton(
           style:
               ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          onPressed: () {
+          onPressed: () async {
+            await ApiService.logout();
+            if (!mounted) return;
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (_) => const LoginPage()),
@@ -319,20 +322,32 @@ class _ProfilTUPageState extends State<ProfilTUPage> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const CircleAvatar(
-          radius: 40,
-          child: Icon(Icons.shield, size: 40),
-        ),
-        const SizedBox(height: 10),
-        const Center(
-          child: Column(
-            children: [
-              Text("Ahmad Fauzi",
-                  style:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              Text("Kepala TU"),
-            ],
-          ),
+        FutureBuilder<Map<String, dynamic>?>(
+          future: ApiService.getUserData(),
+          builder: (context, snapshot) {
+            String nama = "Memuat...";
+            if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+              nama = snapshot.data!['nama_lengkap'] ?? snapshot.data!['username'] ?? 'TU';
+            }
+            return Column(
+              children: [
+                const CircleAvatar(
+                  radius: 40,
+                  child: Icon(Icons.shield, size: 40),
+                ),
+                const SizedBox(height: 10),
+                Center(
+                  child: Column(
+                    children: [
+                      Text(nama,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text("Kepala TU"),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          }
         ),
         const SizedBox(height: 20),
         menuItem(Icons.notifications, "Notifikasi", SubScreen.notifikasi),

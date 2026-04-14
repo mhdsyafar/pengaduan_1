@@ -1,46 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../models/models.dart';
+import '../services/api_service.dart';
 
-class DashboardTU extends StatelessWidget {
-  final List<Petugas> petugas;
-  final List<Pengadu> pengadu;
-  final List<Pengaduan> pengaduan;
+class DashboardTU extends StatefulWidget {
   final Function(String screen) onNavigate;
-
-  static const Color _primary = Color(0xFF3B5BDB);
-  static const Color _primaryLight = Color(0xFF4C6EF5);
 
   const DashboardTU({
     super.key,
-    required this.petugas,
-    required this.pengadu,
-    required this.pengaduan,
     required this.onNavigate,
   });
 
-  // ======================== ERROR VIEW ========================
-  Widget _errorView(Object error, StackTrace stack) {
-    final debugText = '========= DASHBOARD TU ERROR =========\n\n$error\n\n$stack';
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.red,
-        title: const Text("DEBUG ERROR"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.copy),
-            onPressed: () => Clipboard.setData(ClipboardData(text: debugText)),
-          )
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: SelectableText(debugText, style: const TextStyle(color: Colors.redAccent, fontSize: 13, fontFamily: 'monospace')),
-        ),
-      ),
-    );
+  @override
+  State<DashboardTU> createState() => _DashboardTUState();
+}
+
+class _DashboardTUState extends State<DashboardTU> {
+  Map<String, dynamic>? userData;
+  List<Pengaduan> listPengaduan = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    final user = await ApiService.getUserData();
+    final pengaduanResponse = await ApiService.getAllPengaduan();
+
+    List<Pengaduan> mappedAduan = [];
+    if (pengaduanResponse['success'] == true) {
+      mappedAduan = (pengaduanResponse['data'] as List)
+          .map((item) => Pengaduan.fromJson(item))
+          .toList();
+    }
+
+    setState(() {
+      userData = user;
+      listPengaduan = mappedAduan;
+      isLoading = false;
+    });
   }
 
   // ======================== HELPERS ========================
@@ -93,6 +93,8 @@ class DashboardTU extends StatelessWidget {
       greeting = 'Selamat Malam';
     }
 
+    final namaLengkap = userData?['nama_lengkap'] ?? userData?['username'] ?? "Tata Usaha";
+
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -117,9 +119,9 @@ class DashboardTU extends StatelessWidget {
                     children: [
                       Text('$greeting,', style: const TextStyle(color: Colors.white70, fontSize: 14)),
                       const SizedBox(height: 2),
-                      const Text(
-                        'Ahmad Fauzi',
-                        style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                      Text(
+                        namaLengkap,
+                        style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                       ),
                       const Text('Petugas Tata Usaha', style: TextStyle(color: Colors.white60, fontSize: 13)),
                     ],
@@ -127,7 +129,7 @@ class DashboardTU extends StatelessWidget {
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.4), width: 2),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
                     ),
                     child: const CircleAvatar(
                       radius: 28,
@@ -141,9 +143,9 @@ class DashboardTU extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   children: [
@@ -179,9 +181,9 @@ class DashboardTU extends StatelessWidget {
       mainAxisSpacing: 12,
       childAspectRatio: 1.5,
       children: [
-        _statCard('Petugas', pPetugas, Icons.badge_rounded, const Color(0xFF3B5BDB), const Color(0xFFEDF2FF), () => onNavigate('petugas')),
-        _statCard('Pengadu', pPengadu, Icons.people_rounded, const Color(0xFF0CA678), const Color(0xFFE6FCF5), () => onNavigate('pengadu')),
-        _statCard('Pengaduan', pPengaduan, Icons.inbox_rounded, const Color(0xFFEA6C00), const Color(0xFFFFF4E6), () => onNavigate('pengaduan')),
+        _statCard('Petugas', pPetugas, Icons.badge_rounded, const Color(0xFF3B5BDB), const Color(0xFFEDF2FF), () => widget.onNavigate('petugas')),
+        _statCard('Orang Tua', pPengadu, Icons.people_rounded, const Color(0xFF0CA678), const Color(0xFFE6FCF5), () => widget.onNavigate('pengadu')),
+        _statCard('Pengaduan', pPengaduan, Icons.inbox_rounded, const Color(0xFFEA6C00), const Color(0xFFFFF4E6), () => widget.onNavigate('pengaduan')),
         _statCard('Prioritas Tinggi', pTinggi, Icons.warning_amber_rounded, const Color(0xFFE03131), const Color(0xFFFFF5F5), null),
       ],
     );
@@ -195,8 +197,8 @@ class DashboardTU extends StatelessWidget {
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.12)),
-          boxShadow: [BoxShadow(color: color.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))],
+          border: Border.all(color: color.withValues(alpha: 0.12)),
+          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,18 +209,18 @@ class DashboardTU extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
                   child: Icon(icon, color: color, size: 18),
                 ),
                 if (onTap != null)
-                  Icon(Icons.arrow_forward_ios_rounded, size: 12, color: color.withOpacity(0.6)),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 12, color: color.withValues(alpha: 0.6)),
               ],
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(value.toString(), style: TextStyle(color: color, fontSize: 26, fontWeight: FontWeight.bold)),
-                Text(label, style: TextStyle(color: color.withOpacity(0.7), fontSize: 11, fontWeight: FontWeight.w500)),
+                Text(label, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 11, fontWeight: FontWeight.w500)),
               ],
             ),
           ],
@@ -235,7 +237,7 @@ class DashboardTU extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,7 +285,7 @@ class DashboardTU extends StatelessWidget {
         Container(
           width: 36,
           height: 36,
-          decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
           child: Center(child: Text(value.toString(), style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14))),
         ),
         const SizedBox(height: 4),
@@ -300,7 +302,7 @@ class DashboardTU extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,7 +347,7 @@ class DashboardTU extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,7 +359,7 @@ class DashboardTU extends StatelessWidget {
               children: [
                 const Text('Pengaduan Terbaru', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                 TextButton(
-                  onPressed: () => onNavigate('pengaduan'),
+                  onPressed: () => widget.onNavigate('pengaduan'),
                   child: const Text('Lihat Semua', style: TextStyle(fontSize: 12)),
                 ),
               ],
@@ -380,13 +382,13 @@ class DashboardTU extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: _statusColor(p.status).withOpacity(0.12),
+                        color: _statusColor(p.status).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(Icons.inbox_rounded, color: _statusColor(p.status), size: 20),
                     ),
                     title: Text(p.judul, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: Text('${p.namaPengadu} · ${p.tanggal}', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                    subtitle: Text('${p.namaPengadu} · ${p.tanggal.substring(0, 10)}', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                     trailing: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -394,7 +396,7 @@ class DashboardTU extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: _statusColor(p.status).withOpacity(0.12),
+                            color: _statusColor(p.status).withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(_statusText(p.status), style: TextStyle(color: _statusColor(p.status), fontSize: 10, fontWeight: FontWeight.w600)),
@@ -403,7 +405,7 @@ class DashboardTU extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                           decoration: BoxDecoration(
-                            color: _prioritasColor(p.prioritas).withOpacity(0.10),
+                            color: _prioritasColor(p.prioritas).withValues(alpha: 0.10),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(_prioritasText(p.prioritas), style: TextStyle(color: _prioritasColor(p.prioritas), fontSize: 9)),
@@ -424,41 +426,57 @@ class DashboardTU extends StatelessWidget {
   // ======================== BUILD ========================
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF0F2FF),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     try {
-      final prioritasTinggi = pengaduan.where((e) => e.prioritas == Prioritas.tinggi).length;
-      final masuk = pengaduan.where((e) => e.status == StatusPengaduan.masuk).length;
-      final diproses = pengaduan.where((e) => e.status == StatusPengaduan.diproses).length;
-      final selesai = pengaduan.where((e) => e.status == StatusPengaduan.selesai).length;
-      final ditolak = pengaduan.where((e) => e.status == StatusPengaduan.ditolak).length;
+      final prioritasTinggi = listPengaduan.where((e) => e.prioritas == Prioritas.tinggi).length;
+      final masuk = listPengaduan.where((e) => e.status == StatusPengaduan.masuk).length;
+      final diproses = listPengaduan.where((e) => e.status == StatusPengaduan.diproses).length;
+      final selesai = listPengaduan.where((e) => e.status == StatusPengaduan.selesai).length;
+      final ditolak = listPengaduan.where((e) => e.status == StatusPengaduan.ditolak).length;
+
+      // Temporary dummy values for petugas and pengadu since we didn't implement their endpoints yet
+      final int countPetugas = 3;
+      final int countPengadu = 20;
 
       return Scaffold(
         backgroundColor: const Color(0xFFF0F2FF),
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildHeader(context),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 4),
-                    _buildStatCards(petugas.length, pengadu.length, pengaduan.length, prioritasTinggi),
-                    const SizedBox(height: 16),
-                    _buildStatusBar(masuk, diproses, selesai, ditolak),
-                    const SizedBox(height: 16),
-                    _buildRingkasan(petugas.length, petugas.length, masuk, selesai, pengaduan.length),
-                    const SizedBox(height: 16),
-                    _buildPengaduanTerbaru(pengaduan.take(5).toList()),
-                    const SizedBox(height: 16),
-                  ],
+        body: RefreshIndicator(
+          onRefresh: _fetchData,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 4),
+                      _buildStatCards(countPetugas, countPengadu, listPengaduan.length, prioritasTinggi),
+                      const SizedBox(height: 16),
+                      _buildStatusBar(masuk, diproses, selesai, ditolak),
+                      const SizedBox(height: 16),
+                      _buildRingkasan(countPetugas, countPetugas, masuk, selesai, listPengaduan.length),
+                      const SizedBox(height: 16),
+                      _buildPengaduanTerbaru(listPengaduan.take(5).toList()),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
-    } catch (e, s) {
-      return _errorView(e, s);
+    } catch (e) {
+      return Scaffold(
+        body: Center(child: Text("Error: $e")),
+      );
     }
   }
 }
