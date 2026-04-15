@@ -13,20 +13,25 @@ class NavbarOrangTua extends StatefulWidget {
 
 class _NavbarOrangTuaState extends State<NavbarOrangTua> {
   int _currentIndex = 0;
+  late List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      DashboardOrangTua(onAddTap: () => setState(() => _currentIndex = 2)),
+      const StatusPengaduanPage(),
+      const PengaduanPage(),
+      const ProfileOrangTua(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> pages = [
-      DashboardOrangTua(onAddTap: () => setState(() => _currentIndex = 2)),
-      const StatusPengaduanPage(),
-      const PengaduanPage(), 
-      const ProfileOrangTua(),
-    ];
-
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: pages,
+        children: _pages,
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

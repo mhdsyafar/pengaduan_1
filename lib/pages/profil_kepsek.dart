@@ -3,20 +3,6 @@ import '../services/api_service.dart';
 import 'login_page.dart';
 
 /* =======================
-   MODEL USER
-======================= */
-class User {
-  final int id;
-  final String namaguru;
-
-  User({required this.id, required this.namaguru});
-
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(id: json['id'], namaguru: json['namaguru']);
-  }
-}
-
-/* =======================
    PAGE PROFIL
 ======================= */
 class ProfilKepsekPage extends StatefulWidget {
@@ -32,28 +18,12 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
   bool _notifPengaduan = true;
   bool _notifLaporan = false;
 
-  late Future<User> futureUser;
+  late Future<Map<String, dynamic>?> futureUser;
 
   @override
   void initState() {
     super.initState();
-    futureUser = fetchUser();
-  }
-
-  Future<User> fetchUser() async {
-    final result = await ApiService.getMe();
-
-    if (result['success'] == true) {
-      // API backend me-return 'nama_lengkap', sedangkan model User menggunakan 'namaguru' (sepertinya).
-      // Oleh karena itu saya map dari 'nama_lengkap' ke 'namaguru' agar sesuai.
-      final data = result['data'];
-      return User(
-        id: data['id_user'], 
-        namaguru: data['nama_lengkap'] ?? data['username'],
-      );
-    } else {
-      throw Exception(result['message']);
-    }
+    futureUser = ApiService.getUserData();
   }
 
   /* =======================
@@ -119,7 +89,7 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
           ),
           child: SafeArea(
             child: Center(
-              child: FutureBuilder<User>(
+              child: FutureBuilder<Map<String, dynamic>?>(
                 future: futureUser,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -131,7 +101,9 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
                     );
                   }
 
-                  final user = snapshot.data!;
+                  final user = snapshot.data ?? {};
+                  final nama = user['nama_lengkap'] ?? user['username'] ?? 'Kepala Sekolah';
+                  
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -142,7 +114,7 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        user.namaguru,
+                        nama,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -164,7 +136,7 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
      INFO CARD
   ======================= */
   Widget _buildInfoCard() {
-    return FutureBuilder<User>(
+    return FutureBuilder<Map<String, dynamic>?>(
       future: futureUser,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -173,7 +145,9 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
           return const Text("Gagal memuat biodata");
         }
 
-        final user = snapshot.data!;
+        final user = snapshot.data ?? {};
+        final nama = user['nama_lengkap'] ?? user['username'] ?? 'Kepala Sekolah';
+
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -182,7 +156,7 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
           ),
           child: Column(
             children: [
-              _infoRow(Icons.person, "Username", user.namaguru),
+              _infoRow(Icons.person, "Username", nama),
               const Divider(),
             ],
           ),

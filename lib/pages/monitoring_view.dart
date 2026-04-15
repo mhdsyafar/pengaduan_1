@@ -1,9 +1,39 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+import '../models/models.dart';
 
-class MonitoringView extends StatelessWidget {
+class MonitoringView extends StatefulWidget {
   const MonitoringView({super.key});
 
+  @override
+  State<MonitoringView> createState() => _MonitoringViewState();
+}
+
+class _MonitoringViewState extends State<MonitoringView> {
   static const Color _primary = Color(0xFF7048E8);
+  bool _isLoading = true;
+  List<Pengaduan> _laporan = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    setState(() => _isLoading = true);
+    final response = await ApiService.getAllPengaduan();
+    
+    if (response['success'] == true) {
+      final List<Pengaduan> mappedAduan = (response['data'] as List)
+          .map((item) => Pengaduan.fromJson(item))
+          .toList();
+      setState(() {
+        _laporan = mappedAduan;
+      });
+    }
+    setState(() => _isLoading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,6 +42,12 @@ class MonitoringView extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: _primary,
         title: const Text('Monitoring Respons', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            onPressed: _fetchData,
+          ),
+        ],
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -22,24 +58,30 @@ class MonitoringView extends StatelessWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSummaryRow(),
-            const SizedBox(height: 20),
-            _buildSectionTitle('Respons Guru per Pengaduan'),
-            const SizedBox(height: 12),
-            _buildTeacherList(),
-            const SizedBox(height: 20),
-            _buildSectionTitle('Pengaduan Belum Ditangani'),
-            const SizedBox(height: 12),
-            _buildPendingList(),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : RefreshIndicator(
+            onRefresh: _fetchData,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSummaryRow(),
+                  const SizedBox(height: 20),
+                  _buildSectionTitle('Respons Guru per Pengaduan'),
+                  const SizedBox(height: 12),
+                  _buildTeacherList(),
+                  const SizedBox(height: 20),
+                  _buildSectionTitle('Pengaduan Belum Ditangani'),
+                  const SizedBox(height: 12),
+                  _buildPendingList(),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
     );
   }
 
@@ -48,13 +90,14 @@ class MonitoringView extends StatelessWidget {
   }
 
   Widget _buildSummaryRow() {
+    // Dummy response times for now
     return Row(
       children: [
         _summaryChip('Respons Cepat', '3', const Color(0xFF2F9E44)),
         const SizedBox(width: 8),
         _summaryChip('Respons Lambat', '2', const Color(0xFFEA6C00)),
         const SizedBox(width: 8),
-        _summaryChip('Belum Respons', '1', const Color(0xFFE03131)),
+        _summaryChip('Belum Respons', _laporan.where((l) => l.status == StatusPengaduan.masuk).length.toString(), const Color(0xFFE03131)),
       ],
     );
   }
@@ -82,8 +125,6 @@ class MonitoringView extends StatelessWidget {
       {'name': 'Pak Budi Dharma', 'subject': 'Matematika', 'time': '5 menit', 'status': 'Sangat Cepat', 'color': const Color(0xFF2F9E44), 'rating': 5},
       {'name': 'Bu Sari Indah', 'subject': 'Bahasa Indonesia', 'time': '22 menit', 'status': 'Cepat', 'color': const Color(0xFF2F9E44), 'rating': 4},
       {'name': 'Pak Andi Kusuma', 'subject': 'Fisika', 'time': '1 jam 15 mnt', 'status': 'Lambat', 'color': const Color(0xFFEA6C00), 'rating': 2},
-      {'name': 'Bu Dewi Ratna', 'subject': 'Kimia', 'time': '3 jam', 'status': 'Sangat Lambat', 'color': const Color(0xFFE03131), 'rating': 1},
-      {'name': 'Pak Farhan Rizki', 'subject': 'Sejarah', 'time': '45 menit', 'status': 'Normal', 'color': const Color(0xFFEA6C00), 'rating': 3},
     ];
 
     return Column(
@@ -146,13 +187,21 @@ class MonitoringView extends StatelessWidget {
   }
 
   Widget _buildPendingList() {
-    final pending = [
-      {'title': 'Buku pelajaran belum tersedia', 'since': '3 hari lalu', 'by': 'Orang Tua Kelas 9A'},
-    ];
+    final pending = _laporan.where((l) => l.status == StatusPengaduan.masuk).toList();
+
+    if (pending.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+        child: const Center(child: Text("Tidak ada pengaduan yang menunggu.", style: TextStyle(color: Colors.grey))),
+      );
+    }
 
     return Column(
       children: pending.map((p) => Container(
         width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -166,13 +215,12 @@ class MonitoringView extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(p['title'] as String, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                Text(p.judul, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 3),
-                Text(p['by'] as String, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-                Text('Belum ditangani sejak ${p['since']}', style: const TextStyle(fontSize: 11, color: Color(0xFFE03131))),
+                Text('Oleh: ${p.namaPengadu}', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                Text(p.tanggal.isNotEmpty ? p.tanggal.substring(0, 10) : '', style: const TextStyle(fontSize: 11, color: Color(0xFFE03131))),
               ]),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Colors.grey),
           ],
         ),
       )).toList(),

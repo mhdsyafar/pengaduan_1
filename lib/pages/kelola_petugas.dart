@@ -172,7 +172,7 @@ class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
                       decoration: const InputDecoration(labelText: "Role/Peran", border: OutlineInputBorder()),
-                      value: selectedRole,
+                      initialValue: selectedRole,
                       items: const [
                         DropdownMenuItem(value: 1, child: Text('Admin / TU')),
                         DropdownMenuItem(value: 2, child: Text('Guru')),

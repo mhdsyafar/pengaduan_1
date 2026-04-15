@@ -17,6 +17,7 @@ class DashboardTU extends StatefulWidget {
 class _DashboardTUState extends State<DashboardTU> {
   Map<String, dynamic>? userData;
   List<Pengaduan> listPengaduan = [];
+  int countSiswa = 0;
   bool isLoading = true;
 
   @override
@@ -28,6 +29,7 @@ class _DashboardTUState extends State<DashboardTU> {
   Future<void> _fetchData() async {
     final user = await ApiService.getUserData();
     final pengaduanResponse = await ApiService.getAllPengaduan();
+    final siswaResponse = await ApiService.getAllSiswa();
 
     List<Pengaduan> mappedAduan = [];
     if (pengaduanResponse['success'] == true) {
@@ -36,12 +38,19 @@ class _DashboardTUState extends State<DashboardTU> {
           .toList();
     }
 
+    int sCount = 0;
+    if (siswaResponse['success'] == true) {
+      sCount = (siswaResponse['data'] as List).length;
+    }
+
     setState(() {
       userData = user;
       listPengaduan = mappedAduan;
+      countSiswa = sCount;
       isLoading = false;
     });
   }
+
 
   // ======================== HELPERS ========================
   Color _statusColor(StatusPengaduan s) {
@@ -172,7 +181,7 @@ class _DashboardTUState extends State<DashboardTU> {
   }
 
   // ======================== STAT CARDS ========================
-  Widget _buildStatCards(int pPetugas, int pPengadu, int pPengaduan, int pTinggi) {
+  Widget _buildStatCards(int pPetugas, int pSiswa, int pPengadu, int pPengaduan, int pTinggi) {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -181,13 +190,14 @@ class _DashboardTUState extends State<DashboardTU> {
       mainAxisSpacing: 12,
       childAspectRatio: 1.5,
       children: [
-        _statCard('Petugas', pPetugas, Icons.badge_rounded, const Color(0xFF3B5BDB), const Color(0xFFEDF2FF), () => widget.onNavigate('petugas')),
+        _statCard('Siswa', pSiswa, Icons.school_rounded, const Color(0xFF3B5BDB), const Color(0xFFEDF2FF), () => widget.onNavigate('siswa')),
         _statCard('Orang Tua', pPengadu, Icons.people_rounded, const Color(0xFF0CA678), const Color(0xFFE6FCF5), () => widget.onNavigate('pengadu')),
+        _statCard('Petugas', pPetugas, Icons.badge_rounded, const Color(0xFF6366F1), const Color(0xFFEEF2FF), () => widget.onNavigate('petugas')),
         _statCard('Pengaduan', pPengaduan, Icons.inbox_rounded, const Color(0xFFEA6C00), const Color(0xFFFFF4E6), () => widget.onNavigate('pengaduan')),
-        _statCard('Prioritas Tinggi', pTinggi, Icons.warning_amber_rounded, const Color(0xFFE03131), const Color(0xFFFFF5F5), null),
       ],
     );
   }
+
 
   Widget _statCard(String label, int value, IconData icon, Color color, Color bg, VoidCallback? onTap) {
     return GestureDetector(
@@ -457,7 +467,7 @@ class _DashboardTUState extends State<DashboardTU> {
                   child: Column(
                     children: [
                       const SizedBox(height: 4),
-                      _buildStatCards(countPetugas, countPengadu, listPengaduan.length, prioritasTinggi),
+                      _buildStatCards(countPetugas, countSiswa, countPengadu, listPengaduan.length, prioritasTinggi),
                       const SizedBox(height: 16),
                       _buildStatusBar(masuk, diproses, selesai, ditolak),
                       const SizedBox(height: 16),

@@ -1,34 +1,66 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+import '../models/models.dart';
 
-class StatisticsView extends StatelessWidget {
+class StatisticsView extends StatefulWidget {
   const StatisticsView({super.key});
 
+  @override
+  State<StatisticsView> createState() => _StatisticsViewState();
+}
+
+class _StatisticsViewState extends State<StatisticsView> {
   static const Color _primary = Color(0xFF7048E8);
+  bool _isLoading = true;
+  List<Pengaduan> _laporan = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    setState(() => _isLoading = true);
+    final response = await ApiService.getAllPengaduan();
+    
+    if (response['success'] == true) {
+      final List<Pengaduan> mappedAduan = (response['data'] as List)
+          .map((item) => Pengaduan.fromJson(item))
+          .toList();
+      setState(() {
+        _laporan = mappedAduan;
+      });
+    }
+    setState(() => _isLoading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F4FF),
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _buildSummaryRow(),
-                const SizedBox(height: 16),
-                _buildChartCard(),
-                const SizedBox(height: 16),
-                _buildCategoryCard(),
-                const SizedBox(height: 16),
-                _buildTrendCard(),
-                const SizedBox(height: 16),
-              ]),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : CustomScrollView(
+              slivers: [
+                _buildAppBar(),
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      _buildSummaryRow(),
+                      const SizedBox(height: 16),
+                      _buildChartCard(),
+                      const SizedBox(height: 16),
+                      _buildCategoryCard(),
+                      const SizedBox(height: 16),
+                      _buildTrendCard(),
+                      const SizedBox(height: 16),
+                    ]),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -39,8 +71,8 @@ class StatisticsView extends StatelessWidget {
       title: const Text('Statistik Pengaduan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       actions: [
         IconButton(
-          icon: const Icon(Icons.filter_list_rounded, color: Colors.white),
-          onPressed: () {},
+          icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+          onPressed: _fetchData,
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
@@ -58,11 +90,17 @@ class StatisticsView extends StatelessWidget {
   }
 
   Widget _buildSummaryRow() {
+    final total = _laporan.length;
+    final selesai = _laporan.where((l) => l.status == StatusPengaduan.selesai).length;
+    final diproses = _laporan.where((l) => l.status == StatusPengaduan.diproses).length;
+    // Backend tidak menyimpan prioritas saat ini secara eksplisit, gunakan fallback dummy / hitung status ditolak atau masuk sebagai yang butuh ditangani
+    final mendesak = _laporan.where((l) => l.status == StatusPengaduan.masuk).length;
+
     final items = [
-      {'label': 'Total', 'value': '24', 'color': _primary},
-      {'label': 'Selesai', 'value': '12', 'color': const Color(0xFF2F9E44)},
-      {'label': 'Diproses', 'value': '10', 'color': const Color(0xFFEA6C00)},
-      {'label': 'Mendesak', 'value': '2', 'color': const Color(0xFFE03131)},
+      {'label': 'Total', 'value': total.toString(), 'color': _primary},
+      {'label': 'Selesai', 'value': selesai.toString(), 'color': const Color(0xFF2F9E44)},
+      {'label': 'Diproses', 'value': diproses.toString(), 'color': const Color(0xFFEA6C00)},
+      {'label': 'Menunggu', 'value': mendesak.toString(), 'color': const Color(0xFFE03131)},
     ];
     return Row(
       children: items.map((e) {
@@ -90,6 +128,9 @@ class StatisticsView extends StatelessWidget {
   }
 
   Widget _buildChartCard() {
+    // Sebagai fallback, karena kita belum mengagregasi by month di backend, kita gunakan UI dummy chart
+    // atau diisi dengan logic count bulan ini. Karena keterbatasan kita biarkan dummy UI untuk chart-nya tapi
+    // value nyata bisa disuntik jika ada.
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul'];
     final values = [8, 12, 7, 15, 10, 9, 5];
     final done = [6, 10, 4, 12, 7, 8, 3];
@@ -136,11 +177,9 @@ class StatisticsView extends StatelessWidget {
   }
 
   Widget _buildCategoryCard() {
+    // Dummy kategori karena belum ada struktur detail di db
     final categories = [
-      {'label': 'Akademik', 'count': 10, 'pct': 0.42, 'color': _primary},
-      {'label': 'Fasilitas', 'count': 7, 'pct': 0.29, 'color': const Color(0xFFEA6C00)},
-      {'label': 'Perilaku', 'count': 4, 'pct': 0.17, 'color': const Color(0xFFE03131)},
-      {'label': 'Lainnya', 'count': 3, 'pct': 0.12, 'color': const Color(0xFF2F9E44)},
+      {'label': 'Umum', 'count': _laporan.length, 'pct': _laporan.isEmpty ? 0.0 : 1.0, 'color': _primary},
     ];
 
     return _card(

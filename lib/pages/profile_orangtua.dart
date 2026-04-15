@@ -1,55 +1,98 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'login_page.dart';
+import 'help_support_page.dart';
 
-class ProfileOrangTua extends StatelessWidget {
+class ProfileOrangTua extends StatefulWidget {
   const ProfileOrangTua({super.key});
 
+  @override
+  State<ProfileOrangTua> createState() => _ProfileOrangTuaState();
+}
+
+class _ProfileOrangTuaState extends State<ProfileOrangTua> {
   static const Color _primary = Color(0xFF2F4AC2);
+  Map<String, dynamic>? _userData;
+  bool _isLoading = true;
+  bool _notifStatus = true;
+  bool _notifSms = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    setState(() => _isLoading = true);
+    final response = await ApiService.getMe();
+    if (response['success'] == true) {
+      setState(() {
+        _userData = response['data'];
+        _isLoading = false;
+      });
+    } else {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['message'] ?? 'Gagal mengambil data')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final user = _userData ?? {};
+    final nama = user['nama_lengkap'] ?? 'Orang Tua / Wali';
+    final email = user['email'] ?? 'Tidak ada email';
+    final noHp = user['no_hp'] ?? '-';
+    
+    // Get children info
+    final List childrenList = user['children'] ?? [];
+    String namaAnak = 'Tidak ada data';
+    String kelasAnak = 'Tidak ada data';
+    
+    if (childrenList.isNotEmpty) {
+      namaAnak = childrenList.map((c) => c['nama_siswa']).join(', ');
+      kelasAnak = childrenList.map((c) => c['kelas']).toSet().join(', ');
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2FF),
-      body: FutureBuilder<Map<String, dynamic>?>(
-        future: ApiService.getUserData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final user = snapshot.data ?? {};
-          final nama = user['nama_lengkap'] ?? user['username'] ?? 'Orang Tua / Wali';
-          final email = user['email'] ?? 'Tidak ada email';
-          final kelas = user['kelas'];
-
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildHeader(context, nama),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      _buildInfoCard(email, kelas),
-                      const SizedBox(height: 20),
-                      _buildSectionTitle('Pengaturan Notifikasi'),
-                      const SizedBox(height: 12),
-                      _buildSettingsCard(),
-                      const SizedBox(height: 20),
-                      _buildSectionTitle('Akun'),
-                      const SizedBox(height: 12),
-                      _buildAccountCard(context),
-                      const SizedBox(height: 30),
-                      _buildLogoutButton(context),
-                      const SizedBox(height: 30),
-                    ],
-                  ),
+      body: RefreshIndicator(
+        onRefresh: _fetchUserData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              _buildHeader(context, nama),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _buildInfoCard(email, noHp, kelasAnak, namaAnak),
+                    const SizedBox(height: 20),
+                    _buildSectionTitle('Pengaturan Notifikasi'),
+                    const SizedBox(height: 12),
+                    _buildSettingsCard(),
+                    const SizedBox(height: 20),
+                    _buildSectionTitle('Akun'),
+                    const SizedBox(height: 12),
+                    _buildAccountCard(context),
+                    const SizedBox(height: 30),
+                    _buildLogoutButton(context),
+                    const SizedBox(height: 30),
+                  ],
                 ),
-              ],
-            ),
-          );
-        }
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -71,8 +114,19 @@ class ProfileOrangTua extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
           child: Column(
             children: [
-              const Text('Profil Saya', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const SizedBox(width: 40),
+                  const Text('Profil Saya', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(
+                    onPressed: () => _showEditProfileDialog(),
+                    icon: const Icon(Icons.edit_note_rounded, color: Colors.white),
+                    tooltip: 'Edit Profil',
+                  )
+                ],
+              ),
+              const SizedBox(height: 16),
               Container(
                 decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 3)),
                 child: const CircleAvatar(radius: 40, backgroundColor: Colors.white24, child: Icon(Icons.person_rounded, size: 40, color: Colors.white)),
@@ -97,7 +151,7 @@ class ProfileOrangTua extends StatelessWidget {
   }
 
   // ======================== CARDS ========================
-  Widget _buildInfoCard(String email, String? kelas) {
+  Widget _buildInfoCard(String email, String noHp, String kelas, String namaAnak) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
@@ -105,11 +159,11 @@ class ProfileOrangTua extends StatelessWidget {
         children: [
           _infoRow(Icons.email_rounded, 'Email', email),
           const Divider(height: 24),
-          _infoRow(Icons.phone_rounded, 'Nomor Telepon', '-'),
+          _infoRow(Icons.phone_rounded, 'Nomor Telepon', noHp),
           const Divider(height: 24),
-          _infoRow(Icons.class_rounded, 'Kelas Anak', kelas ?? 'Tidak ditugaskan'),
+          _infoRow(Icons.class_rounded, 'Kelas Anak', kelas),
           const Divider(height: 24),
-          _infoRow(Icons.child_care_rounded, 'Nama Anak', 'Tidak ada data'),
+          _infoRow(Icons.child_care_rounded, 'Nama Anak', namaAnak),
         ],
       ),
     );
@@ -120,10 +174,12 @@ class ProfileOrangTua extends StatelessWidget {
       children: [
         Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: _primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: _primary, size: 18)),
         const SizedBox(width: 12),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-        ]),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+            Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+          ]),
+        ),
       ],
     );
   }
@@ -136,15 +192,15 @@ class ProfileOrangTua extends StatelessWidget {
           SwitchListTile(
             activeThumbColor: _primary,
             title: const Text('Notifikasi Status Pengaduan', style: TextStyle(fontSize: 14)),
-            value: true,
-            onChanged: (v) {},
+            value: _notifStatus,
+            onChanged: (v) => setState(() => _notifStatus = v),
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
           SwitchListTile(
             activeThumbColor: _primary,
-            title: const Text('Notifikasi SMS', style: TextStyle(fontSize: 14)),
-            value: false,
-            onChanged: (v) {},
+            title: const Text('Notifikasi Email', style: TextStyle(fontSize: 14)),
+            value: _notifSms,
+            onChanged: (v) => setState(() => _notifSms = v),
           ),
         ],
       ),
@@ -156,9 +212,97 @@ class ProfileOrangTua extends StatelessWidget {
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
       child: Column(
         children: [
-          ListTile(leading: const Icon(Icons.lock_rounded, color: Colors.grey), title: const Text('Ubah Password', style: TextStyle(fontSize: 14)), trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey), onTap: () {}),
+          ListTile(
+            leading: const Icon(Icons.lock_rounded, color: Colors.grey),
+            title: const Text('Ubah Password', style: TextStyle(fontSize: 14)),
+            trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+            onTap: () => _showChangePasswordDialog(),
+          ),
           const Divider(height: 1, indent: 16, endIndent: 16),
-          ListTile(leading: const Icon(Icons.help_outline_rounded, color: Colors.grey), title: const Text('Pusat Bantuan', style: TextStyle(fontSize: 14)), trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey), onTap: () {}),
+          ListTile(
+            leading: const Icon(Icons.help_outline_rounded, color: Colors.grey),
+            title: const Text('Pusat Bantuan & FAQ', style: TextStyle(fontSize: 14)),
+            trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpSupportPage()));
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ======================== DIALOGS ========================
+  void _showEditProfileDialog() {
+    final nameController = TextEditingController(text: _userData?['nama_lengkap']);
+    final emailController = TextEditingController(text: _userData?['email']);
+    final phoneController = TextEditingController(text: _userData?['no_hp']);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Profil'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Nama Lengkap')),
+            TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email')),
+            TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Nomor Telepon')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () async {
+              final result = await ApiService.updateMyProfile({
+                'nama_lengkap': nameController.text,
+                'email': emailController.text,
+                'no_hp': phoneController.text,
+              });
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'] ?? (result['success'] ? 'Berhasil' : 'Gagal'))));
+              if (result['success']) _fetchUserData();
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    final oldPass = TextEditingController();
+    final newPass = TextEditingController();
+    final confirmPass = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ubah Password'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: oldPass, obscureText: true, decoration: const InputDecoration(labelText: 'Password Lama')),
+            TextField(controller: newPass, obscureText: true, decoration: const InputDecoration(labelText: 'Password Baru')),
+            TextField(controller: confirmPass, obscureText: true, decoration: const InputDecoration(labelText: 'Konfirmasi Password')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () async {
+              if (newPass.text != confirmPass.text) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Konfirmasi password tidak cocok')));
+                return;
+              }
+              final result = await ApiService.changePassword(oldPass.text, newPass.text);
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'])));
+            },
+            child: const Text('Ubah'),
+          ),
         ],
       ),
     );

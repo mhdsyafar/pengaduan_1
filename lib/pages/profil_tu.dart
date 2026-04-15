@@ -1,33 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'login_page.dart';
-
-enum SubScreen {
-  main,
-  notifikasi,
-  ubahPassword,
-  bantuan,
-  tentang,
-  logoutConfirm,
-}
-
-class Notifikasi {
-  final String id;
-  final String judul;
-  final String pesan;
-  final String waktu;
-  bool dibaca;
-  final String tipe;
-
-  Notifikasi({
-    required this.id,
-    required this.judul,
-    required this.pesan,
-    required this.waktu,
-    required this.dibaca,
-    required this.tipe,
-  });
-}
+import 'help_support_page.dart';
 
 class ProfilTUPage extends StatefulWidget {
   const ProfilTUPage({super.key});
@@ -37,345 +11,319 @@ class ProfilTUPage extends StatefulWidget {
 }
 
 class _ProfilTUPageState extends State<ProfilTUPage> {
-  SubScreen subScreen = SubScreen.main;
+  static const Color _primary = Color(0xFF6366F1); // Indigo
+  Map<String, dynamic>? _userData;
+  bool _isLoading = true;
+  bool _notifStatus = true;
+  bool _notifEmail = true;
 
-  List<Notifikasi> notifikasi = [
-    Notifikasi(
-      id: "1",
-      judul: "Pengaduan Baru Masuk",
-      pesan:
-          "Pengaduan #ADU-005 tentang 'Kerusakan Jalan' telah diterima dan menunggu tindak lanjut.",
-      waktu: "5 menit lalu",
-      dibaca: false,
-      tipe: "pengaduan",
-    ),
-    Notifikasi(
-      id: "2",
-      judul: "Status Pengaduan Diperbarui",
-      pesan: "Pengaduan #ADU-003 telah selesai diproses.",
-      waktu: "1 jam lalu",
-      dibaca: false,
-      tipe: "pengaduan",
-    ),
-    Notifikasi(
-      id: "3",
-      judul: "Akun Petugas Baru",
-      pesan: "Akun petugas Dewi Lestari berhasil dibuat.",
-      waktu: "3 jam lalu",
-      dibaca: true,
-      tipe: "akun",
-    ),
-  ];
-
-  int get unreadCount =>
-      notifikasi.where((n) => !n.dibaca).length;
-
-  // ================= HEADER =================
-  Widget header(String title) {
-    return Row(
-      children: [
-        IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            setState(() => subScreen = SubScreen.main);
-          },
-        ),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        )
-      ],
-    );
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
   }
 
-  // ================= NOTIFIKASI =================
-  Widget notifikasiScreen() {
-    return Column(
-      children: [
-        header("Notifikasi"),
-        if (unreadCount > 0)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("$unreadCount belum dibaca"),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      for (var n in notifikasi) {
-                        n.dibaca = true;
-                      }
-                    });
-                  },
-                  child: const Text("Tandai semua"),
-                )
-              ],
-            ),
-          ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: notifikasi.length,
-            itemBuilder: (context, index) {
-              final n = notifikasi[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 6),
-                child: ListTile(
-                  leading: Icon(
-                    n.tipe == "pengaduan"
-                        ? Icons.message
-                        : Icons.notifications,
-                    color: n.dibaca ? Colors.grey : Colors.blue,
-                  ),
-                  title: Text(
-                    n.judul,
-                    style: TextStyle(
-                      fontWeight:
-                          n.dibaca ? FontWeight.normal : FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(n.pesan),
-                      const SizedBox(height: 4),
-                      Text(
-                        n.waktu,
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                    ],
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, size: 18),
-                    onPressed: () {
-                      setState(() => notifikasi.removeAt(index));
-                    },
-                  ),
-                  onTap: () {
-                    setState(() => n.dibaca = true);
-                  },
-                ),
-              );
-            },
-          ),
-        )
-      ],
-    );
+  Future<void> _fetchUserData() async {
+    setState(() => _isLoading = true);
+    final response = await ApiService.getMe();
+    if (response['success'] == true) {
+      setState(() {
+        _userData = response['data'];
+        _isLoading = false;
+      });
+    } else {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['message'] ?? 'Gagal mengambil data')),
+        );
+      }
+    }
   }
 
-  // ================= UBAH PASSWORD =================
-  Widget ubahPasswordScreen() {
-    final oldController = TextEditingController();
-    final newController = TextEditingController();
-    final confirmController = TextEditingController();
-
-    return Column(
-      children: [
-        header("Ubah Password"),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              TextField(
-                controller: oldController,
-                obscureText: true,
-                decoration:
-                    const InputDecoration(labelText: "Password Lama"),
-              ),
-              TextField(
-                controller: newController,
-                obscureText: true,
-                decoration:
-                    const InputDecoration(labelText: "Password Baru"),
-              ),
-              TextField(
-                controller: confirmController,
-                obscureText: true,
-                decoration:
-                    const InputDecoration(labelText: "Konfirmasi Password"),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text("Password berhasil diubah")),
-                  );
-                },
-                child: const Text("Simpan"),
-              )
-            ],
-          ),
-        )
-      ],
-    );
-  }
-
-  // ================= BANTUAN =================
-  Widget bantuanScreen() {
-    return Column(
-      children: [
-        header("Bantuan"),
-        const Padding(
-          padding: EdgeInsets.all(16),
-          child: Text(
-            "Jika mengalami kendala, hubungi:\n"
-            "Email: support@pengaduan.go.id\n"
-            "Telp: (021) 1234-5678",
-            textAlign: TextAlign.center,
-          ),
-        )
-      ],
-    );
-  }
-
-  // ================= TENTANG =================
-  Widget tentangScreen() {
-    return Column(
-      children: [
-        header("Tentang Aplikasi"),
-        const Padding(
-          padding: EdgeInsets.all(16),
-          child: Text(
-            "Sistem Pengaduan Masyarakat Digital\n"
-            "Versi 1.0.0\n\n"
-            "Aplikasi ini digunakan oleh Petugas TU "
-            "untuk mengelola pengaduan masyarakat.",
-            textAlign: TextAlign.center,
-          ),
-        )
-      ],
-    );
-  }
-
-  // ================= LOGOUT =================
-  Widget logoutConfirm() {
-    return Column(
-      children: [
-        header("Keluar"),
-        const SizedBox(height: 40),
-        const Text(
-          "Apakah Anda yakin ingin keluar?",
-          style: TextStyle(fontSize: 16),
-        ),
-        const SizedBox(height: 20),
-        ElevatedButton(
-          style:
-              ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          onPressed: () async {
-            await ApiService.logout();
-            if (!mounted) return;
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const LoginPage()),
-              (_) => false,
-            );
-          },
-          child: const Text("Ya, Keluar", style: TextStyle(color: Colors.white)),
-        ),
-        TextButton(
-          onPressed: () {
-            setState(() => subScreen = SubScreen.main);
-          },
-          child: const Text("Batal"),
-        )
-      ],
-    );
-  }
-
-  // ================= MAIN =================
   @override
   Widget build(BuildContext context) {
-    Widget body;
-
-    switch (subScreen) {
-      case SubScreen.notifikasi:
-        body = notifikasiScreen();
-        break;
-      case SubScreen.ubahPassword:
-        body = ubahPasswordScreen();
-        break;
-      case SubScreen.bantuan:
-        body = bantuanScreen();
-        break;
-      case SubScreen.tentang:
-        body = tentangScreen();
-        break;
-      case SubScreen.logoutConfirm:
-        body = logoutConfirm();
-        break;
-      default:
-        body = mainScreen();
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final user = _userData ?? {};
+    final nama = user['nama_lengkap'] ?? 'Petugas TU';
+    final email = user['email'] ?? 'Tidak ada email';
+    final noHp = user['no_hp'] ?? '-';
+    final username = user['username'] ?? '-';
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Akun TU")),
-      body: body,
+      backgroundColor: const Color(0xFFF5F7FF),
+      body: RefreshIndicator(
+        onRefresh: _fetchUserData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              _buildHeader(context, nama),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _buildInfoCard(email, noHp, username),
+                    const SizedBox(height: 20),
+                    _buildSectionTitle('Pengaturan Notifikasi'),
+                    const SizedBox(height: 12),
+                    _buildSettingsCard(),
+                    const SizedBox(height: 20),
+                    _buildSectionTitle('Akun'),
+                    const SizedBox(height: 12),
+                    _buildAccountCard(context),
+                    const SizedBox(height: 30),
+                    _buildLogoutButton(context),
+                    const SizedBox(height: 30),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  Widget mainScreen() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        FutureBuilder<Map<String, dynamic>?>(
-          future: ApiService.getUserData(),
-          builder: (context, snapshot) {
-            String nama = "Memuat...";
-            if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-              nama = snapshot.data!['nama_lengkap'] ?? snapshot.data!['username'] ?? 'TU';
-            }
-            return Column(
-              children: [
-                const CircleAvatar(
-                  radius: 40,
-                  child: Icon(Icons.shield, size: 40),
-                ),
-                const SizedBox(height: 10),
-                Center(
-                  child: Column(
-                    children: [
-                      Text(nama,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const Text("Kepala TU"),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          }
+  // ======================== HEADER ========================
+  Widget _buildHeader(BuildContext context, String namaLengkap) {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF4338CA), Color(0xFF6366F1), Color(0xFF818CF8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        const SizedBox(height: 20),
-        menuItem(Icons.notifications, "Notifikasi", SubScreen.notifikasi),
-        menuItem(Icons.lock, "Ubah Password", SubScreen.ubahPassword),
-        menuItem(Icons.help, "Bantuan", SubScreen.bantuan),
-        menuItem(Icons.info, "Tentang Aplikasi", SubScreen.tentang),
-        const SizedBox(height: 20),
-        ElevatedButton.icon(
-          icon: const Icon(Icons.logout),
-          label: const Text("Keluar"),
-          style:
-              ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          onPressed: () {
-            setState(() => subScreen = SubScreen.logoutConfirm);
-          },
-        )
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const SizedBox(width: 40),
+                  const Text('Profil Petugas', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(
+                    onPressed: () => _showEditProfileDialog(),
+                    icon: const Icon(Icons.edit_note_rounded, color: Colors.white),
+                    tooltip: 'Edit Profil',
+                  )
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 3)),
+                child: const CircleAvatar(radius: 40, backgroundColor: Colors.white24, child: Icon(Icons.admin_panel_settings_rounded, size: 40, color: Colors.white)),
+              ),
+              const SizedBox(height: 16),
+              const Text('Administrator TU / Staf Admin', style: TextStyle(color: Colors.white70, fontSize: 13)),
+              const SizedBox(height: 4),
+              Text(namaLengkap, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ======================== TITLE ========================
+  Widget _buildSectionTitle(String title) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1C1C3A))),
+    );
+  }
+
+  // ======================== CARDS ========================
+  Widget _buildInfoCard(String email, String noHp, String username) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
+      child: Column(
+        children: [
+          _infoRow(Icons.person_outline_rounded, 'Username', username),
+          const Divider(height: 24),
+          _infoRow(Icons.email_rounded, 'Email', email),
+          const Divider(height: 24),
+          _infoRow(Icons.phone_rounded, 'Nomor Telepon', noHp),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: _primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: _primary, size: 18)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+            Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+          ]),
+        ),
       ],
     );
   }
 
-  Widget menuItem(IconData icon, String title, SubScreen target) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () {
-        setState(() => subScreen = target);
-      },
+  Widget _buildSettingsCard() {
+    return Container(
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
+      child: Column(
+        children: [
+          SwitchListTile(
+            activeThumbColor: _primary,
+            title: const Text('Notifikasi Pengaduan Baru', style: TextStyle(fontSize: 14)),
+            value: _notifStatus,
+            onChanged: (v) => setState(() => _notifStatus = v),
+          ),
+          const Divider(height: 1, indent: 16, endIndent: 16),
+          SwitchListTile(
+            activeThumbColor: _primary,
+            title: const Text('Pengingat Review Harian', style: TextStyle(fontSize: 14)),
+            value: _notifEmail,
+            onChanged: (v) => setState(() => _notifEmail = v),
+          ),
+        ],
+      ),
     );
   }
-}
+
+  Widget _buildAccountCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.lock_rounded, color: Colors.grey),
+            title: const Text('Ubah Password', style: TextStyle(fontSize: 14)),
+            trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+            onTap: () => _showChangePasswordDialog(),
+          ),
+          const Divider(height: 1, indent: 16, endIndent: 16),
+          ListTile(
+            leading: const Icon(Icons.help_outline_rounded, color: Colors.grey),
+            title: const Text('Pusat Bantuan & FAQ', style: TextStyle(fontSize: 14)),
+            trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpSupportPage()));
+            },
+          ),
+          const Divider(height: 1, indent: 16, endIndent: 16),
+          const ListTile(
+            leading: Icon(Icons.info_outline_rounded, color: Colors.grey),
+            title: Text('Tentang Aplikasi', style: TextStyle(fontSize: 14)),
+            subtitle: Text('Versi 2.1.0', style: TextStyle(fontSize: 11)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ======================== DIALOGS ========================
+  void _showEditProfileDialog() {
+    final nameController = TextEditingController(text: _userData?['nama_lengkap']);
+    final emailController = TextEditingController(text: _userData?['email']);
+    final phoneController = TextEditingController(text: _userData?['no_hp']);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Profil'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Nama Lengkap')),
+            TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email')),
+            TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Nomor Telepon')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () async {
+              final result = await ApiService.updateMyProfile({
+                'nama_lengkap': nameController.text,
+                'email': emailController.text,
+                'no_hp': phoneController.text,
+              });
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'] ?? (result['success'] ? 'Berhasil' : 'Gagal'))));
+              if (result['success']) _fetchUserData();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: _primary),
+            child: const Text('Simpan', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    final oldPass = TextEditingController();
+    final newPass = TextEditingController();
+    final confirmPass = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ubah Password'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: oldPass, obscureText: true, decoration: const InputDecoration(labelText: 'Password Lama')),
+            TextField(controller: newPass, obscureText: true, decoration: const InputDecoration(labelText: 'Password Baru')),
+            TextField(controller: confirmPass, obscureText: true, decoration: const InputDecoration(labelText: 'Konfirmasi Password')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () async {
+              if (newPass.text != confirmPass.text) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Konfirmasi password tidak cocok')));
+                return;
+              }
+              final result = await ApiService.changePassword(oldPass.text, newPass.text);
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'])));
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: _primary),
+            child: const Text('Ubah', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ======================== LOGOUT ========================
+  Widget _buildLogoutButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFE03131).withValues(alpha: 0.1),
+          foregroundColor: const Color(0xFFE03131),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 0,
+        ),
+        onPressed: () async {
+          await ApiService.logout();
+          if (!context.mounted) return;
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginPage()), (route) => false);
+        },
+        child: const Text('Keluar dari Akun', style: TextStyle(fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+}

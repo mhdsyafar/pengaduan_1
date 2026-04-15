@@ -13,21 +13,10 @@ class _PengaduanPageState extends State<PengaduanPage> {
   final TextEditingController judulController = TextEditingController();
   final TextEditingController deskripsiController = TextEditingController();
 
-  final List<String> kategoriOptions = [
-    'Akademik',
-    'Fasilitas',
-    'Keamanan',
-    'Kebersihan',
-    'Guru & Staff',
-    'Lainnya',
-  ];
-
-  String kategori = '';
   bool isSubmitted = false;
 
   bool get isValid =>
       judulController.text.trim().isNotEmpty &&
-      kategori.isNotEmpty &&
       deskripsiController.text.trim().isNotEmpty;
 
   bool isLoading = false;
@@ -39,7 +28,7 @@ class _PengaduanPageState extends State<PengaduanPage> {
       isLoading = true;
     });
 
-    final String finalIsi = "[Kategori: $kategori]\n\n${deskripsiController.text.trim()}";
+    final String finalIsi = deskripsiController.text.trim();
 
     final result = await ApiService.createPengaduan(
       judulController.text.trim(),
@@ -59,7 +48,6 @@ class _PengaduanPageState extends State<PengaduanPage> {
         judulController.clear();
         deskripsiController.clear();
         setState(() {
-          kategori = '';
           isSubmitted = false;
         });
       });
@@ -181,50 +169,7 @@ class _PengaduanPageState extends State<PengaduanPage> {
             ),
           ),
 
-          const SizedBox(height: 12),
 
-          /// ================= Kategori =================
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Kategori *',
-                    style:
-                        TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: kategoriOptions.map((option) {
-                      final bool selected = kategori == option;
-                      return ChoiceChip(
-                        label: Text(
-                          option,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color:
-                                selected ? Colors.white : Colors.grey[700],
-                          ),
-                        ),
-                        selected: selected,
-                        selectedColor:
-                            Theme.of(context).colorScheme.primary,
-                        onSelected: (_) {
-                          setState(() {
-                            kategori = option;
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
-          ),
 
           const SizedBox(height: 12),
 

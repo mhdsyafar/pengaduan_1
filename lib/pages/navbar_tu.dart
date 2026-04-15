@@ -3,6 +3,7 @@ import 'dashboard_tu.dart';
 import 'data_pengaduan.dart';
 import 'kelola_pengadu.dart';
 import 'kelola_petugas.dart';
+import 'kelola_siswa.dart';
 import 'profil_tu.dart';
 
 class NavbarTU extends StatefulWidget {
@@ -14,29 +15,43 @@ class NavbarTU extends StatefulWidget {
 
 class _NavbarTUState extends State<NavbarTU> {
   int _idx = 0;
+  late List<Widget> _pages;
 
   static const Color _primary = Color(0xFF3B5BDB);
 
   void _navigateTo(String screen) {
-    final map = {'pengaduan': 1, 'pengadu': 2, 'petugas': 3, 'profil': 4};
+    final map = {
+      'pengaduan': 1,
+      'siswa': 2,
+      'pengadu': 3,
+      'petugas': 4,
+      'profil': 5
+    };
     if (map.containsKey(screen)) setState(() => _idx = map[screen]!);
   }
 
   static const _navItems = [
     _NavItem(Icons.dashboard_rounded, Icons.dashboard_outlined, 'Dashboard'),
     _NavItem(Icons.inbox_rounded, Icons.inbox_outlined, 'Pengaduan'),
+    _NavItem(Icons.school_rounded, Icons.school_outlined, 'Siswa'),
     _NavItem(Icons.people_rounded, Icons.people_outlined, 'Orang Tua'),
     _NavItem(Icons.badge_rounded, Icons.badge_outlined, 'Petugas'),
     _NavItem(Icons.person_rounded, Icons.person_outlined, 'Profil'),
   ];
 
-  List<Widget> get _pages => [
-    DashboardTU(onNavigate: _navigateTo),
-    const DataPengaduan(),
-    const KelolaPengaduPage(),
-    const KelolaPetugasPage(),
-    const ProfilTUPage(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      DashboardTU(onNavigate: _navigateTo),
+      const DataPengaduan(),
+      const KelolaSiswaPage(),
+      const KelolaPengaduPage(),
+      const KelolaPetugasPage(),
+      const ProfilTUPage(),
+    ];
+  }
+
 
   @override
   Widget build(BuildContext context) {
