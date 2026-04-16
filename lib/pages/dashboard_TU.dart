@@ -20,6 +20,8 @@ class _DashboardTUState extends State<DashboardTU> {
   Map<String, dynamic>? userData;
   List<Pengaduan> listPengaduan = [];
   int countSiswa = 0;
+  int countPetugas = 0;
+  int countPengadu = 0;
   bool isLoading = true;
   int _unreadNotifCount = 0;
 
@@ -33,6 +35,8 @@ class _DashboardTUState extends State<DashboardTU> {
     final user = await ApiService.getUserData();
     final pengaduanResponse = await ApiService.getAllPengaduan();
     final siswaResponse = await ApiService.getAllSiswa();
+    final usersResponse = await ApiService.getAllUsers();
+    final orangtuaResponse = await ApiService.getAllOrangtua();
 
     List<Pengaduan> mappedAduan = [];
     if (pengaduanResponse['success'] == true) {
@@ -46,6 +50,25 @@ class _DashboardTUState extends State<DashboardTU> {
       sCount = (siswaResponse['data'] as List).length;
     }
 
+    // Hitung petugas (role selain orangtua: role 1=TU, 2=Guru, 4=Kepsek)
+    int pCount = 0;
+    if (usersResponse['success'] == true) {
+      pCount = (usersResponse['data'] as List)
+          .where((u) => u['id_role'] != 3)
+          .length;
+    }
+
+    // Hitung orang tua dari data orangtua
+    int oCount = 0;
+    if (orangtuaResponse['success'] == true) {
+      // Hitung jumlah user unik (bukan jumlah record orangtua)
+      final uniqueUsers = <int>{};
+      for (final o in (orangtuaResponse['data'] as List)) {
+        if (o['id_user'] != null) uniqueUsers.add(o['id_user']);
+      }
+      oCount = uniqueUsers.length;
+    }
+
     await NotificationService.checkForUpdates();
     final unread = await NotificationService.getUnreadCount();
 
@@ -54,6 +77,8 @@ class _DashboardTUState extends State<DashboardTU> {
       userData = user;
       listPengaduan = mappedAduan;
       countSiswa = sCount;
+      countPetugas = pCount;
+      countPengadu = oCount;
       _unreadNotifCount = unread;
       isLoading = false;
     });
@@ -494,9 +519,7 @@ class _DashboardTUState extends State<DashboardTU> {
       final selesai = listPengaduan.where((e) => e.status == StatusPengaduan.selesai).length;
       final ditolak = listPengaduan.where((e) => e.status == StatusPengaduan.ditolak).length;
 
-      // Temporary dummy values for petugas and pengadu since we didn't implement their endpoints yet
-      final int countPetugas = 3;
-      final int countPengadu = 20;
+      // Menggunakan data real dari database
 
       return Scaffold(
         backgroundColor: const Color(0xFFF0F2FF),
