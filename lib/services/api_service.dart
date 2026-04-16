@@ -1,17 +1,12 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb;
+
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // Menggunakan Local Network
+  // Menggunakan URL Server yang di-deploy di Render
   static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:3000/api';
-    }
-    // Jika lewat Emulator gunakan 'http://10.0.2.2:3000/api'
-    // Menggunakan IP Wi-Fi agar bisa diakses Device Fisik
-    return 'http://192.168.1.21:3000/api';
+    return 'https://expressbackend-xe83.onrender.com/api';
   }
 
   /// Login ke backend Express
