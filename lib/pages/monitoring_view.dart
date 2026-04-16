@@ -13,6 +13,10 @@ class _MonitoringViewState extends State<MonitoringView> {
   static const Color _primary = Color(0xFF7048E8);
   bool _isLoading = true;
   List<Pengaduan> _laporan = [];
+  
+  int _cepatCount = 0;
+  int _lambatCount = 0;
+  List<Map<String, dynamic>> _teacherResponsList = [];
 
   @override
   void initState() {
@@ -28,8 +32,46 @@ class _MonitoringViewState extends State<MonitoringView> {
       final List<Pengaduan> mappedAduan = (response['data'] as List)
           .map((item) => Pengaduan.fromJson(item))
           .toList();
+          
+      int cepat = 0;
+      int lambat = 0;
+      List<Map<String, dynamic>> responsData = [];
+
+      for (var aduan in mappedAduan) {
+        if (aduan.rawTanggapans != null && aduan.rawTanggapans!.isNotEmpty) {
+          final tglAduan = DateTime.tryParse(aduan.tanggal);
+          
+          for (var t in aduan.rawTanggapans!) {
+            final tglTanggapan = DateTime.tryParse(t['tanggal_tanggapan'] ?? '');
+            final userNama = (t['User'] != null) ? t['User']['nama_lengkap'] : 'Guru';
+            
+            if (tglAduan != null && tglTanggapan != null) {
+              final diff = tglTanggapan.difference(tglAduan);
+              
+              if (diff.inHours <= 24) {
+                cepat++;
+              } else {
+                lambat++;
+              }
+              
+              responsData.add({
+                'name': userNama,
+                'judul_aduan': aduan.judul,
+                'diff': diff,
+              });
+            }
+          }
+        }
+      }
+      
+      // Sort by fastest response
+      responsData.sort((a, b) => (a['diff'] as Duration).compareTo(b['diff'] as Duration));
+
       setState(() {
         _laporan = mappedAduan;
+        _cepatCount = cepat;
+        _lambatCount = lambat;
+        _teacherResponsList = responsData;
       });
     }
     setState(() => _isLoading = false);
@@ -90,14 +132,13 @@ class _MonitoringViewState extends State<MonitoringView> {
   }
 
   Widget _buildSummaryRow() {
-    // Dummy response times for now
     return Row(
       children: [
-        _summaryChip('Respons Cepat', '3', const Color(0xFF2F9E44)),
+        _summaryChip('Respons Cepat', '$_cepatCount', const Color(0xFF2F9E44)),
         const SizedBox(width: 8),
-        _summaryChip('Respons Lambat', '2', const Color(0xFFEA6C00)),
+        _summaryChip('Respons Lambat', '$_lambatCount', const Color(0xFFEA6C00)),
         const SizedBox(width: 8),
-        _summaryChip('Belum Respons', _laporan.where((l) => l.status == StatusPengaduan.masuk).length.toString(), const Color(0xFFE03131)),
+        _summaryChip('Belum Respons', _laporan.where((l) => l.status == StatusPengaduan.masuk && (l.rawTanggapans == null || l.rawTanggapans!.isEmpty)).length.toString(), const Color(0xFFE03131)),
       ],
     );
   }
@@ -120,18 +161,30 @@ class _MonitoringViewState extends State<MonitoringView> {
     );
   }
 
+  String _formatDuration(Duration d) {
+    if (d.inDays > 0) return '${d.inDays} hari';
+    if (d.inHours > 0) return '${d.inHours} jam';
+    if (d.inMinutes > 0) return '${d.inMinutes} mnt';
+    return 'Baru saja';
+  }
+
   Widget _buildTeacherList() {
-    final teachers = [
-      {'name': 'Pak Budi Dharma', 'subject': 'Matematika', 'time': '5 menit', 'status': 'Sangat Cepat', 'color': const Color(0xFF2F9E44), 'rating': 5},
-      {'name': 'Bu Sari Indah', 'subject': 'Bahasa Indonesia', 'time': '22 menit', 'status': 'Cepat', 'color': const Color(0xFF2F9E44), 'rating': 4},
-      {'name': 'Pak Andi Kusuma', 'subject': 'Fisika', 'time': '1 jam 15 mnt', 'status': 'Lambat', 'color': const Color(0xFFEA6C00), 'rating': 2},
-    ];
+    if (_teacherResponsList.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+        child: const Center(child: Text("Belum ada tanggapan masuk.", style: TextStyle(color: Colors.grey))),
+      );
+    }
 
     return Column(
-      children: teachers.asMap().entries.map((e) {
-        final t = e.value;
-        final color = t['color'] as Color;
-        final rating = t['rating'] as int;
+      children: _teacherResponsList.take(5).map((t) { // Take top 5 fastest/latest
+        final diff = t['diff'] as Duration;
+        final isFast = diff.inHours <= 24;
+        final color = isFast ? const Color(0xFF2F9E44) : const Color(0xFFEA6C00);
+        final statusLabel = isFast ? 'Cepat' : 'Lambat';
+
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(14),
@@ -157,25 +210,19 @@ class _MonitoringViewState extends State<MonitoringView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(t['name'] as String, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                    Text(t['subject'] as String, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-                    const SizedBox(height: 4),
-                    Row(children: List.generate(5, (i) => Icon(
-                      i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                      size: 13,
-                      color: i < rating ? const Color(0xFFF59F00) : Colors.grey.shade300,
-                    ))),
+                    Text('Respons untuk: ${t['judul_aduan']}', style: TextStyle(fontSize: 11, color: Colors.grey.shade500), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(t['time'] as String, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color)),
+                  Text(_formatDuration(diff), style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color)),
                   const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(color: color.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(20)),
-                    child: Text(t['status'] as String, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
+                    child: Text(statusLabel, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
                   ),
                 ],
               ),

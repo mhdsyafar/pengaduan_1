@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import 'login_page.dart';
 
 /* =======================
@@ -24,6 +25,12 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
   void initState() {
     super.initState();
     futureUser = ApiService.getUserData();
+    _loadNotifSetting();
+  }
+
+  Future<void> _loadNotifSetting() async {
+    final enabled = await NotificationService.isEnabled();
+    if (mounted) setState(() => _notifPengaduan = enabled);
   }
 
   /* =======================
@@ -49,7 +56,10 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
                       "Notifikasi Pengaduan",
                       "Info pengaduan masuk",
                       _notifPengaduan,
-                      (v) => setState(() => _notifPengaduan = v),
+                      (v) async {
+                        setState(() => _notifPengaduan = v);
+                        await NotificationService.setEnabled(v);
+                      },
                     ),
                     _buildSwitchTile(
                       Icons.summarize,

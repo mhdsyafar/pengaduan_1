@@ -54,6 +54,7 @@ class Pengaduan {
   final StatusPengaduan status;
   final String tanggal;
   final Prioritas prioritas;
+  final List<dynamic>? rawTanggapans;
 
   Pengaduan({
     required this.id,
@@ -65,6 +66,7 @@ class Pengaduan {
     required this.status,
     required this.tanggal,
     required this.prioritas,
+    this.rawTanggapans,
   });
 
   factory Pengaduan.fromJson(Map<String, dynamic> json) {
@@ -96,6 +98,7 @@ class Pengaduan {
       status: parseStatus(json['status']),
       tanggal: json['tanggal_pengaduan'] ?? '',
       prioritas: Prioritas.sedang, // Backend tidak menyimpan prioritas
+      rawTanggapans: json['Tanggapans'] as List<dynamic>?,
     );
   }
 }

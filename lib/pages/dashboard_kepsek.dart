@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import '../models/models.dart';
+import 'notification_page.dart';
 
 class DashboardKepsek extends StatefulWidget {
   const DashboardKepsek({super.key});
@@ -15,6 +17,7 @@ class _DashboardKepsekState extends State<DashboardKepsek> {
   Map<String, dynamic>? userData;
   List<Pengaduan> listPengaduan = [];
   bool isLoading = true;
+  int _unreadNotifCount = 0;
 
   @override
   void initState() {
@@ -33,9 +36,14 @@ class _DashboardKepsekState extends State<DashboardKepsek> {
           .toList();
     }
 
+    await NotificationService.checkForUpdates();
+    final unread = await NotificationService.getUnreadCount();
+
+    if (!mounted) return;
     setState(() {
       userData = user;
       listPengaduan = mappedAduan;
+      _unreadNotifCount = unread;
       isLoading = false;
     });
   }
@@ -138,16 +146,53 @@ class _DashboardKepsekState extends State<DashboardKepsek> {
                       const Text('Kepala Sekolah', style: TextStyle(color: Colors.white60, fontSize: 13)),
                     ],
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
-                    ),
-                    child: const CircleAvatar(
-                      radius: 28,
-                      backgroundColor: Colors.white24,
-                      child: Icon(Icons.school_rounded, size: 30, color: Colors.white),
-                    ),
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () async {
+                          await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationPage()));
+                          _fetchData();
+                        },
+                        child: Stack(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.notifications_rounded, color: Colors.white, size: 22),
+                            ),
+                            if (_unreadNotifCount > 0)
+                              Positioned(
+                                right: 0, top: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(color: Color(0xFFE03131), shape: BoxShape.circle),
+                                  constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                                  child: Text(
+                                    '$_unreadNotifCount',
+                                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
+                        ),
+                        child: const CircleAvatar(
+                          radius: 28,
+                          backgroundColor: Colors.white24,
+                          child: Icon(Icons.school_rounded, size: 30, color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

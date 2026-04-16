@@ -322,7 +322,7 @@ class ApiService {
 
       final response = await http
           .get(
-            Uri.parse('$baseUrl/pengaduan/$idPengaduan/tanggapan'),
+            Uri.parse('$baseUrl/tanggapan/$idPengaduan'),
             headers: {'Authorization': 'Bearer $token'},
           )
           .timeout(const Duration(seconds: 10));
@@ -357,7 +357,7 @@ class ApiService {
 
       final response = await http
           .post(
-            Uri.parse('$baseUrl/pengaduan/$idPengaduan/tanggapan'),
+            Uri.parse('$baseUrl/tanggapan/$idPengaduan'),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',

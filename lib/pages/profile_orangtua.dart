@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import 'login_page.dart';
 import 'help_support_page.dart';
 
@@ -21,6 +22,12 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
   void initState() {
     super.initState();
     _fetchUserData();
+    _loadNotifSetting();
+  }
+
+  Future<void> _loadNotifSetting() async {
+    final enabled = await NotificationService.isEnabled();
+    if (mounted) setState(() => _notifStatus = enabled);
   }
 
   Future<void> _fetchUserData() async {
@@ -193,7 +200,10 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
             activeThumbColor: _primary,
             title: const Text('Notifikasi Status Pengaduan', style: TextStyle(fontSize: 14)),
             value: _notifStatus,
-            onChanged: (v) => setState(() => _notifStatus = v),
+            onChanged: (v) async {
+              setState(() => _notifStatus = v);
+              await NotificationService.setEnabled(v);
+            },
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
           SwitchListTile(

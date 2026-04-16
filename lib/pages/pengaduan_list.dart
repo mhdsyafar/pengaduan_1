@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/models.dart';
+import 'tanggapan_page.dart';
 
 class PengaduanPage extends StatefulWidget {
   const PengaduanPage({super.key});
@@ -192,32 +193,110 @@ class _PengaduanPageState extends State<PengaduanPage> {
                         
                               return GestureDetector(
                                 onTap: () {
-                                  // Munculkan Bottom sheet untuk update status
                                   showModalBottomSheet(
                                     context: context,
-                                    builder: (_) => Container(
-                                      padding: const EdgeInsets.all(16),
+                                    isScrollControlled: true,
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                                    ),
+                                    builder: (_) => Padding(
+                                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Text("Ubah Status Pengaduan", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                          // Handle bar
+                                          Container(
+                                            width: 40, height: 4,
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade300,
+                                              borderRadius: BorderRadius.circular(2),
+                                            ),
+                                          ),
                                           const SizedBox(height: 16),
+
+                                          // Judul pengaduan
+                                          Text(
+                                            item.judul,
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Oleh: ${item.namaPengadu}',
+                                            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                          ),
+                                          const SizedBox(height: 12),
+
+                                          // Isi pengaduan
+                                          Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade50,
+                                              borderRadius: BorderRadius.circular(12),
+                                              border: Border.all(color: Colors.grey.shade200),
+                                            ),
+                                            child: Text(
+                                              item.isi,
+                                              style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                                              maxLines: 5,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+
+                                          // Tombol Balas Pengaduan
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: ElevatedButton.icon(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => TanggapanPage(pengaduan: item),
+                                                  ),
+                                                );
+                                              },
+                                              icon: const Icon(Icons.reply_rounded),
+                                              label: const Text('Balas Pengaduan', style: TextStyle(fontWeight: FontWeight.bold)),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: _primary,
+                                                foregroundColor: Colors.white,
+                                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+
+                                          // Ubah status
+                                          const Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Text("Ubah Status", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                                          ),
+                                          const SizedBox(height: 8),
                                           Wrap(
                                             spacing: 8,
+                                            runSpacing: 8,
                                             children: StatusPengaduan.values.map((s) {
+                                              final isActive = s == item.status;
                                               return ElevatedButton(
                                                 onPressed: () {
                                                   Navigator.pop(context);
                                                   updateStatus(item.id, s);
                                                 },
                                                 style: ElevatedButton.styleFrom(
-                                                  backgroundColor: s == item.status ? _primary : Colors.grey.shade200,
-                                                  foregroundColor: s == item.status ? Colors.white : Colors.black87,
+                                                  backgroundColor: isActive ? _primary : Colors.grey.shade100,
+                                                  foregroundColor: isActive ? Colors.white : Colors.black87,
+                                                  elevation: isActive ? 2 : 0,
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                                 ),
-                                                child: Text(s.name.toUpperCase()),
+                                                child: Text(s.name[0].toUpperCase() + s.name.substring(1), style: const TextStyle(fontSize: 12)),
                                               );
                                             }).toList(),
-                                          )
+                                          ),
                                         ],
                                       ),
                                     ),

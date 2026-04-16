@@ -96,85 +96,6 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
     );
   }
 
-  Future<int?> _showAddSiswaDialog() async {
-    final namaCtrl = TextEditingController();
-    final kelasCtrl = TextEditingController();
-    final tahunCtrl = TextEditingController();
-
-    return showDialog<int>(
-      context: context,
-      builder: (ctx) {
-        bool isSaving = false;
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            return AlertDialog(
-              title: const Text('Tambah Siswa Baru'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: namaCtrl,
-                      decoration: const InputDecoration(labelText: 'Nama Lengkap'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: kelasCtrl,
-                      decoration: const InputDecoration(labelText: 'Kelas (Misal: 10A)'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: tahunCtrl,
-                      decoration: const InputDecoration(labelText: 'Tahun Ajaran (Misal: 2024/2025)'),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isSaving ? null : () => Navigator.pop(ctx), 
-                  child: const Text('Batal')
-                ),
-                ElevatedButton(
-                  onPressed: isSaving ? null : () async {
-                    if (namaCtrl.text.isEmpty || kelasCtrl.text.isEmpty || tahunCtrl.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Semua field wajib diisi')));
-                      return;
-                    }
-                    setDialogState(() => isSaving = true);
-                    final payload = {
-                      'nama_siswa': namaCtrl.text,
-                      'kelas': kelasCtrl.text,
-                      'tahun_ajaran': tahunCtrl.text
-                    };
-                    final res = await ApiService.createSiswa(payload);
-                    if (!mounted) return;
-                    if (res['success']) {
-                      final newId = res['data']['id_siswa'];
-                      final resSiswa = await ApiService.getAllSiswa();
-                      if (resSiswa['success'] && mounted) {
-                        setState(() {
-                          siswaList = resSiswa['data'];
-                        });
-                      }
-                      if (ctx.mounted) Navigator.pop(ctx, newId);
-                    } else {
-                      setDialogState(() => isSaving = false);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Gagal membuat siswa')));
-                    }
-                  },
-                  child: isSaving 
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) 
-                      : const Text('Simpan'),
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-
   void showForm(BuildContext context, {Map<String, dynamic>? data}) {
     final bool isEdit = data != null;
 
@@ -183,7 +104,7 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
     final passwordCtrl = TextEditingController();
     final emailCtrl = TextEditingController(text: isEdit ? data['User']['email'] : '');
     final noHpCtrl = TextEditingController(text: isEdit ? data['User']['no_hp'] : '');
-    final kelasCtrl = TextEditingController(text: isEdit ? data['kelas'] : '');
+
     
     String? selectedHubungan = isEdit ? data['hubungan'] : 'ayah';
     int? selectedSiswa = isEdit ? data['id_siswa'] : (siswaList.isNotEmpty ? siswaList[0]['id_siswa'] : null);
@@ -246,11 +167,6 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
                       decoration: const InputDecoration(labelText: "No. HP", border: OutlineInputBorder()),
                     ),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: kelasCtrl,
-                      decoration: const InputDecoration(labelText: "Kelas", border: OutlineInputBorder()),
-                    ),
-                    const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       decoration: const InputDecoration(labelText: "Hubungan", border: OutlineInputBorder()),
                       initialValue: selectedHubungan,
@@ -262,45 +178,19 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
                       },
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<int>(
-                            decoration: const InputDecoration(labelText: "Data Siswa", border: OutlineInputBorder()),
-                            initialValue: selectedSiswa,
-                            isExpanded: true,
-                            items: siswaList.map((s) {
-                              return DropdownMenuItem<int>(
-                                value: s['id_siswa'],
-                                child: Text("${s['nama_siswa']} (Kelas ${s['kelas']})", overflow: TextOverflow.ellipsis),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              setStateModal(() => selectedSiswa = val);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          onPressed: () async {
-                            final newSiswaId = await _showAddSiswaDialog();
-                            if (newSiswaId != null) {
-                              setStateModal(() {
-                                selectedSiswa = newSiswaId;
-                              });
-                            }
-                          },
-                          icon: const Icon(Icons.person_add),
-                          tooltip: 'Tambah Siswa',
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.blue.withValues(alpha: 0.1),
-                            foregroundColor: Colors.blue,
-                            padding: const EdgeInsets.all(16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
-                      ],
+                    DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(labelText: "Data Siswa", border: OutlineInputBorder()),
+                      value: selectedSiswa,
+                      isExpanded: true,
+                      items: siswaList.map((s) {
+                        return DropdownMenuItem<int>(
+                          value: s['id_siswa'],
+                          child: Text("${s['nama_siswa']} (Kelas ${s['kelas']})", overflow: TextOverflow.ellipsis),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        setStateModal(() => selectedSiswa = val);
+                      },
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
@@ -332,7 +222,7 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
                           "username": usernameCtrl.text,
                           "email": emailCtrl.text,
                           "no_hp": noHpCtrl.text,
-                          "kelas": kelasCtrl.text,
+
                           "hubungan": selectedHubungan,
                           "id_siswa": selectedSiswa
                         };
