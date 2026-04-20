@@ -9,12 +9,15 @@ class KelolaSiswaPage extends StatefulWidget {
 }
 
 class _KelolaSiswaPageState extends State<KelolaSiswaPage> {
-  static const Color _primary = Color(0xFF3B5BDB);
+  static const Color _primary = Color(0xFF0D9488);
   final TextEditingController _searchController = TextEditingController();
   
   List<dynamic> _listSiswa = [];
   List<dynamic> _filteredSiswa = [];
+  String _selectedClass = 'Semua';
   bool _isLoading = true;
+
+  final List<String> _classList = ['Semua', '1', '2', '3', '4', '5', '6'];
 
   @override
   void initState() {
@@ -41,7 +44,11 @@ class _KelolaSiswaPageState extends State<KelolaSiswaPage> {
         final nama = s['nama_siswa'].toString().toLowerCase();
         final kelas = s['kelas'].toString().toLowerCase();
         final tahun = s['tahun_ajaran'].toString().toLowerCase();
-        return nama.contains(query) || kelas.contains(query) || tahun.contains(query);
+        
+        final matchesQuery = nama.contains(query) || kelas.contains(query) || tahun.contains(query);
+        final matchesClass = _selectedClass == 'Semua' || s['kelas'].toString() == _selectedClass;
+        
+        return matchesQuery && matchesClass;
       }).toList();
     });
   }
@@ -62,6 +69,7 @@ class _KelolaSiswaPageState extends State<KelolaSiswaPage> {
       body: Column(
         children: [
           _buildSearchHeader(),
+          _buildClassFilter(),
           Expanded(
             child: _isLoading 
               ? const Center(child: CircularProgressIndicator())
@@ -94,6 +102,47 @@ class _KelolaSiswaPageState extends State<KelolaSiswaPage> {
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           contentPadding: const EdgeInsets.symmetric(vertical: 0),
         ),
+      ),
+    );
+  }
+
+  Widget _buildClassFilter() {
+    return Container(
+      height: 50,
+      color: Colors.white,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _classList.length,
+        itemBuilder: (context, index) {
+          final cls = _classList[index];
+          final isSelected = _selectedClass == cls;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8, bottom: 8),
+            child: ChoiceChip(
+              label: Text(cls == 'Semua' ? 'Semua' : 'Kelas $cls'),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() {
+                    _selectedClass = cls;
+                    _filterSiswa();
+                  });
+                }
+              },
+              selectedColor: _primary,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : Colors.black87,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+              backgroundColor: const Color(0xFFF1F3F5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              side: BorderSide.none,
+              showCheckmark: false,
+            ),
+          );
+        },
       ),
     );
   }
@@ -193,8 +242,10 @@ class _KelolaSiswaPageState extends State<KelolaSiswaPage> {
   void _showFormDialog({Map<String, dynamic>? data}) {
     final bool isEdit = data != null;
     final namaCtrl = TextEditingController(text: isEdit ? data['nama_siswa'] : '');
-    final kelasCtrl = TextEditingController(text: isEdit ? data['kelas'] : '');
+    String selectedKelas = isEdit ? data['kelas'].toString() : '1';
     final tahunCtrl = TextEditingController(text: isEdit ? data['tahun_ajaran'] : '');
+
+    final availableClasses = ['1', '2', '3', '4', '5', '6'];
 
     showDialog(
       context: context,
@@ -211,15 +262,17 @@ class _KelolaSiswaPageState extends State<KelolaSiswaPage> {
                 decoration: const InputDecoration(labelText: 'Nama Lengkap *', hintText: 'Masukkan nama siswa'),
                 textCapitalization: TextCapitalization.words,
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: kelasCtrl,
-                decoration: const InputDecoration(labelText: 'Kelas *', hintText: 'Contoh: 10A'),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: availableClasses.contains(selectedKelas) ? selectedKelas : availableClasses.first,
+                decoration: const InputDecoration(labelText: 'Kelas *', border: OutlineInputBorder()),
+                items: availableClasses.map((c) => DropdownMenuItem(value: c, child: Text('Kelas $c'))).toList(),
+                onChanged: (val) => selectedKelas = val!,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextField(
                 controller: tahunCtrl,
-                decoration: const InputDecoration(labelText: 'Tahun Ajaran *', hintText: 'Contoh: 2024/2025'),
+                decoration: const InputDecoration(labelText: 'Tahun Ajaran *', hintText: 'Contoh: 2024/2025', border: OutlineInputBorder()),
               ),
             ],
           ),
@@ -231,7 +284,7 @@ class _KelolaSiswaPageState extends State<KelolaSiswaPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (namaCtrl.text.isEmpty || kelasCtrl.text.isEmpty || tahunCtrl.text.isEmpty) {
+              if (namaCtrl.text.isEmpty || tahunCtrl.text.isEmpty) {
                 ScaffoldMessenger.of(dialogContext).showSnackBar(
                   const SnackBar(content: Text('Harap isi semua data yang bertanda *')),
                 );
@@ -240,7 +293,7 @@ class _KelolaSiswaPageState extends State<KelolaSiswaPage> {
               
               final payload = {
                 'nama_siswa': namaCtrl.text,
-                'kelas': kelasCtrl.text,
+                'kelas': selectedKelas,
                 'tahun_ajaran': tahunCtrl.text,
               };
 

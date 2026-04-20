@@ -93,7 +93,7 @@ class _DataPengaduanState extends State<DataPengaduan> {
   Color statusColor(StatusPengaduan status) {
     switch (status) {
       case StatusPengaduan.masuk:
-        return Colors.blue;
+        return const Color(0xFF0D9488);
       case StatusPengaduan.diproses:
         return Colors.orange;
       case StatusPengaduan.selesai:
@@ -204,63 +204,144 @@ class _DataPengaduanState extends State<DataPengaduan> {
     if (selected == null) return const SizedBox();
 
     final p = selected!;
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Wrap(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final Color sColor = statusColor(p.status);
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFF8F9FA),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
             children: [
-              Text(
-                '#${p.id}',
-                style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 12,
-                ),
+              // HANDLE
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
               ),
-              Chip(
-                label: Text(p.status.name),
-                backgroundColor: statusColor(p.status).withValues(alpha: 0.2),
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  children: [
+                    // HEADER SECTION
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('#${p.id}', style: TextStyle(fontFamily: 'monospace', fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(color: sColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: sColor.withValues(alpha: 0.2))),
+                          child: Text(p.status.name.toUpperCase(), style: TextStyle(color: sColor, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(p.judul, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
+                    const SizedBox(height: 12),
+                    
+                    // INFO CARD
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))]),
+                      child: Column(
+                        children: [
+                          _infoRow(Icons.person_outline_rounded, 'Pengadu', p.namaPengadu),
+                          const Divider(height: 24),
+                          _infoRow(Icons.calendar_today_rounded, 'Tanggal', p.tanggal.substring(0, 10)),
+                          const Divider(height: 24),
+                          _infoRow(Icons.category_outlined, 'Kategori', p.kategori),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    const Text('Isi Laporan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text(p.isi, style: const TextStyle(fontSize: 15, color: Color(0xFF4A4A4A), height: 1.5)),
+                    
+                    const SizedBox(height: 24),
+                    if (p.rawTanggapans != null && p.rawTanggapans!.isNotEmpty) ...[
+                      const Text('Tanggapan Petugas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      ...p.rawTanggapans!.map((t) => Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.blue.withValues(alpha: 0.1))),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.reply_all_rounded, size: 16, color: Colors.blue),
+                                const SizedBox(width: 8),
+                                Text(t['Petugas']?['User']?['nama_lengkap'] ?? 'Petugas', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blue)),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(t['isi_tanggapan'] ?? '', style: const TextStyle(fontSize: 14, color: Color(0xFF333333))),
+                          ],
+                        ),
+                      )),
+                    ],
+
+                    const SizedBox(height: 24),
+                    const Text('Aksi Cepat', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: StatusPengaduan.values.map((s) {
+                        final isCurrent = s == p.status;
+                        return SizedBox(
+                          width: (MediaQuery.of(context).size.width - 48) / 2,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isCurrent ? statusColor(s) : Colors.white,
+                              foregroundColor: isCurrent ? Colors.white : statusColor(s),
+                              elevation: 0,
+                              side: BorderSide(color: statusColor(s)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            onPressed: isCurrent ? null : () {
+                              Navigator.pop(context);
+                              updateStatus(p.id, s);
+                            },
+                            child: Text(s.name.toUpperCase(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(p.judul,
-              style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text('Pengadu: ${p.namaPengadu}'),
-          Text('Tanggal: ${p.tanggal.substring(0, 10)}'),
-          Text('Kategori: ${p.kategori}'),
-          const SizedBox(height: 12),
-          Text(p.isi),
-          const SizedBox(height: 16),
+        );
+      },
+    );
+  }
 
-          const Text('Ubah Status',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-
-          Wrap(
-            spacing: 8,
-            children: StatusPengaduan.values
-                .where((s) => s != p.status)
-                .map(
-                  (s) => ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      side: BorderSide(color: statusColor(s)),
-                      backgroundColor: statusColor(s).withValues(alpha: 0.1),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context); // Close sheet before updating
-                      updateStatus(p.id, s);
-                    },
-                    child: Text(s.name, style: TextStyle(color: statusColor(s))),
-                  ),
-                )
-                .toList(),
-          ),
-        ],
-      ),
+  Widget _infoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle), child: Icon(icon, size: 18, color: Colors.grey.shade600)),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+            Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333))),
+          ],
+        ),
+      ],
     );
   }
 }

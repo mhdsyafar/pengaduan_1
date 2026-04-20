@@ -4,14 +4,15 @@ import '../models/models.dart';
 import 'tanggapan_page.dart';
 
 class StatusPengaduanPage extends StatefulWidget {
-  const StatusPengaduanPage({super.key});
+  final String? initialFilter;
+  const StatusPengaduanPage({super.key, this.initialFilter});
 
   @override
   State<StatusPengaduanPage> createState() => _StatusPengaduanPageState();
 }
 
 class _StatusPengaduanPageState extends State<StatusPengaduanPage> {
-  String filter = 'semua';
+  late String filter;
   String search = '';
   String? expandedId;
   
@@ -23,6 +24,7 @@ class _StatusPengaduanPageState extends State<StatusPengaduanPage> {
   @override
   void initState() {
     super.initState();
+    filter = widget.initialFilter ?? 'semua';
     _fetchData();
   }
 

@@ -3,19 +3,25 @@ import '../services/api_service.dart';
 import '../services/notification_service.dart';
 import '../models/models.dart';
 import 'notification_page.dart';
+import 'laporan_view.dart';
+import 'monitoring_view.dart';
+import 'dart:io';
+import '../services/profile_image_service.dart';
 
 class DashboardKepsek extends StatefulWidget {
-  const DashboardKepsek({super.key});
+  final VoidCallback? onProfileTap;
+  const DashboardKepsek({super.key, this.onProfileTap});
 
   @override
   State<DashboardKepsek> createState() => _DashboardKepsekState();
 }
 
 class _DashboardKepsekState extends State<DashboardKepsek> {
-  static const Color _primary = Color(0xFF7048E8);
+  static const Color _primary = Color(0xFF0D9488);
 
   Map<String, dynamic>? userData;
   List<Pengaduan> listPengaduan = [];
+  File? _profileImage;
   bool isLoading = true;
   int _unreadNotifCount = 0;
 
@@ -23,6 +29,12 @@ class _DashboardKepsekState extends State<DashboardKepsek> {
   void initState() {
     super.initState();
     _fetchData();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final img = await ProfileImageService.loadProfileImage();
+    if (mounted) setState(() => _profileImage = img);
   }
 
   Future<void> _fetchData() async {
@@ -46,13 +58,14 @@ class _DashboardKepsekState extends State<DashboardKepsek> {
       _unreadNotifCount = unread;
       isLoading = false;
     });
+    _loadProfileImage();
   }
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF5F4FF),
+        backgroundColor: Color(0xFFF0FDFA),
         body: Center(child: CircularProgressIndicator()),
       );
     }
@@ -60,11 +73,16 @@ class _DashboardKepsekState extends State<DashboardKepsek> {
     final total = listPengaduan.length;
     final diproses = listPengaduan.where((e) => e.status == StatusPengaduan.diproses).length;
     final selesai = listPengaduan.where((e) => e.status == StatusPengaduan.selesai).length;
-    // Dummy counting prioritias tinggi since prioritizing logic needs backend adjustments:
-    final tinggi = listPengaduan.where((e) => e.prioritas == Prioritas.tinggi).length;
+    
+    int totalRespons = 0;
+    for (var aduan in listPengaduan) {
+      if (aduan.rawTanggapans != null) {
+        totalRespons += aduan.rawTanggapans!.length;
+      }
+    }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F4FF),
+      backgroundColor: const Color(0xFFF0FDFA),
       body: RefreshIndicator(
         onRefresh: _fetchData,
         child: SingleChildScrollView(
@@ -78,7 +96,7 @@ class _DashboardKepsekState extends State<DashboardKepsek> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 4),
-                    _buildStatGrid(total, diproses, selesai, tinggi),
+                    _buildStatGrid(context, total, diproses, selesai, totalRespons),
                     const SizedBox(height: 20),
                     _buildSectionTitle("Tren Pengaduan Bulanan"),
                     const SizedBox(height: 12),
@@ -119,7 +137,7 @@ class _DashboardKepsekState extends State<DashboardKepsek> {
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF5E35B1), Color(0xFF7048E8), Color(0xFF9775FA)],
+          colors: [Color(0xFF0F766E), Color(0xFF0D9488), Color(0xFF14B8A6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -181,15 +199,19 @@ class _DashboardKepsekState extends State<DashboardKepsek> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
-                        ),
-                        child: const CircleAvatar(
-                          radius: 28,
-                          backgroundColor: Colors.white24,
-                          child: Icon(Icons.school_rounded, size: 30, color: Colors.white),
+                      GestureDetector(
+                        onTap: widget.onProfileTap,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
+                          ),
+                          child: CircleAvatar(
+                            radius: 28,
+                            backgroundColor: Colors.white24,
+                            backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                            child: _profileImage == null ? const Icon(Icons.school_rounded, size: 30, color: Colors.white) : null,
+                          ),
                         ),
                       ),
                     ],
@@ -231,7 +253,21 @@ class _DashboardKepsekState extends State<DashboardKepsek> {
   }
 
   // ======================== STAT GRID ========================
-  Widget _buildStatGrid(int total, int diproses, int selesai, int tinggi) {
+  void _openLaporan(BuildContext context, String filter) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => LaporanView(initialFilter: filter)),
+    );
+  }
+
+  void _openMonitoring(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MonitoringView()),
+    );
+  }
+
+  Widget _buildStatGrid(BuildContext context, int total, int diproses, int selesai, int totalRespons) {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -240,40 +276,43 @@ class _DashboardKepsekState extends State<DashboardKepsek> {
       mainAxisSpacing: 12,
       childAspectRatio: 1.5,
       children: [
-        _statCard("Total Pengaduan", total.toString(), Icons.report_rounded, const Color(0xFF7048E8), const Color(0xFFF3F0FF)),
-        _statCard("Sedang Diproses", diproses.toString(), Icons.pending_actions_rounded, const Color(0xFFEA6C00), const Color(0xFFFFF4E6)),
-        _statCard("Selesai", selesai.toString(), Icons.check_circle_rounded, const Color(0xFF2F9E44), const Color(0xFFE6FCF5)),
-        _statCard("Prioritas Tinggi", tinggi.toString(), Icons.warning_amber_rounded, const Color(0xFFE03131), const Color(0xFFFFF5F5)),
+        _statCard("Total Pengaduan", total.toString(), Icons.report_rounded, const Color(0xFF0D9488), const Color(0xFFF0FDFA), () => _openLaporan(context, 'Semua')),
+        _statCard("Sedang Diproses", diproses.toString(), Icons.pending_actions_rounded, const Color(0xFFEA6C00), const Color(0xFFFFF4E6), () => _openLaporan(context, 'Diproses')),
+        _statCard("Selesai", selesai.toString(), Icons.check_circle_rounded, const Color(0xFF2F9E44), const Color(0xFFE6FCF5), () => _openLaporan(context, 'Selesai')),
+        _statCard("Respons Guru", totalRespons.toString(), Icons.forum_rounded, const Color(0xFF0F766E), const Color(0xFFE6FCFA), () => _openMonitoring(context)),
       ],
     );
   }
 
-  Widget _statCard(String label, String value, IconData icon, Color color, Color bg) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.12)),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, color: color, size: 18),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(value, style: TextStyle(color: color, fontSize: 26, fontWeight: FontWeight.bold)),
-              Text(label, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 11, fontWeight: FontWeight.w500)),
-            ],
-          ),
-        ],
+  Widget _statCard(String label, String value, IconData icon, Color color, Color bg, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.12)),
+          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(value, style: TextStyle(color: color, fontSize: 26, fontWeight: FontWeight.bold)),
+                Text(label, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 11, fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

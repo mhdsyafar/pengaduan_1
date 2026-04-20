@@ -89,7 +89,16 @@ class ApiService {
   /// LOGOUT
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    
+    // Hapus kredensial login saja, pertahankan profile_pic_* dan pengaturan notifikasi
+    final keysToRemove = [
+      'token', 'id_user', 'username', 'nama_lengkap', 
+      'email', 'id_role', 'kelas', 'no_hp'
+    ];
+    
+    for (String key in keysToRemove) {
+      await prefs.remove(key);
+    }
   }
 
   /// AMBIL DATA PROFIL SENDIRI DARI BACKEND

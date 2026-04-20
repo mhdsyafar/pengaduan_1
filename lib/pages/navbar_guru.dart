@@ -13,11 +13,17 @@ class NavbarGuru extends StatefulWidget {
 class _NavbarGuruState extends State<NavbarGuru> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const DashboardGuru(),
-    const PengaduanPage(),
-    const ProfilGuru(),
-  ];
+  late List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      DashboardGuru(onProfileTap: () => setState(() => _currentIndex = 2)),
+      const PengaduanPage(),
+      const ProfilGuru(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -15,7 +15,7 @@ class NavbarKepsek extends StatefulWidget {
 class _NavbarKepsekState extends State<NavbarKepsek> {
   int _idx = 0;
 
-  static const Color _primary = Color(0xFF7048E8);
+  static const Color _primary = Color(0xFF0D9488);
 
   static const _navItems = [
     _NavItem(Icons.dashboard_rounded, Icons.dashboard_outlined, 'Beranda'),
@@ -25,13 +25,19 @@ class _NavbarKepsekState extends State<NavbarKepsek> {
     _NavItem(Icons.person_rounded, Icons.person_outlined, 'Profil'),
   ];
 
-  final List<Widget> _pages = const [
-    DashboardKepsek(),
-    StatisticsView(),
-    LaporanView(),
-    MonitoringView(),
-    ProfilKepsekPage(),
-  ];
+  late List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      DashboardKepsek(onProfileTap: () => setState(() => _idx = 4)),
+      const StatisticsView(),
+      const LaporanView(),
+      const MonitoringView(),
+      const ProfilKepsekPage(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -3,9 +3,13 @@ import '../services/api_service.dart';
 import '../services/notification_service.dart';
 import '../models/models.dart';
 import 'notification_page.dart';
+import 'pengaduan_list.dart';
+import 'dart:io';
+import '../services/profile_image_service.dart';
 
 class DashboardGuru extends StatefulWidget {
-  const DashboardGuru({super.key});
+  final VoidCallback? onProfileTap;
+  const DashboardGuru({super.key, this.onProfileTap});
 
   @override
   State<DashboardGuru> createState() => _DashboardGuruState();
@@ -14,6 +18,7 @@ class DashboardGuru extends StatefulWidget {
 class _DashboardGuruState extends State<DashboardGuru> {
   Map<String, dynamic>? userData;
   List<Pengaduan> listPengaduan = [];
+  File? _profileImage;
   bool isLoading = true;
   int _unreadNotifCount = 0;
 
@@ -21,6 +26,12 @@ class _DashboardGuruState extends State<DashboardGuru> {
   void initState() {
     super.initState();
     _fetchData();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final img = await ProfileImageService.loadProfileImage();
+    if (mounted) setState(() => _profileImage = img);
   }
 
   Future<void> _fetchData() async {
@@ -44,6 +55,7 @@ class _DashboardGuruState extends State<DashboardGuru> {
       _unreadNotifCount = unread;
       isLoading = false;
     });
+    _loadProfileImage();
   }
 
   @override
@@ -75,7 +87,7 @@ class _DashboardGuruState extends State<DashboardGuru> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 4),
-                    _buildStatGrid(total, baru, diproses, selesai),
+                    _buildStatGrid(context, total, baru, diproses, selesai),
                     const SizedBox(height: 24),
                     const Text('Tugas Terbaru', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1C1C3A))),
                     const SizedBox(height: 12),
@@ -173,15 +185,19 @@ class _DashboardGuruState extends State<DashboardGuru> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
-                        ),
-                        child: const CircleAvatar(
-                          radius: 28,
-                          backgroundColor: Colors.white24,
-                          child: Icon(Icons.person_rounded, size: 30, color: Colors.white),
+                      GestureDetector(
+                        onTap: widget.onProfileTap,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
+                          ),
+                          child: CircleAvatar(
+                            radius: 28,
+                            backgroundColor: Colors.white24,
+                            backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                            child: _profileImage == null ? const Icon(Icons.person_rounded, size: 30, color: Colors.white) : null,
+                          ),
                         ),
                       ),
                     ],
@@ -196,7 +212,7 @@ class _DashboardGuruState extends State<DashboardGuru> {
   }
 
   // ======================== STAT GRID ========================
-  Widget _buildStatGrid(int total, int baru, int diproses, int selesai) {
+  Widget _buildStatGrid(BuildContext context, int total, int baru, int diproses, int selesai) {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -205,40 +221,51 @@ class _DashboardGuruState extends State<DashboardGuru> {
       mainAxisSpacing: 12,
       childAspectRatio: 1.5,
       children: [
-        _statCard("Total Kasus", total.toString(), Icons.folder_rounded, const Color(0xFF0D9488), const Color(0xFFF0FDFA)),
-        _statCard("Laporan Baru", baru.toString(), Icons.warning_amber_rounded, const Color(0xFFE03131), const Color(0xFFFFF5F5)),
-        _statCard("Sedang Diproses", diproses.toString(), Icons.pending_actions_rounded, const Color(0xFFF59F00), const Color(0xFFFFF9DB)),
-        _statCard("Penyelesaian", selesai.toString(), Icons.check_circle_rounded, const Color(0xFF2F9E44), const Color(0xFFEBFBEE)),
+        _statCard("Total Kasus", total.toString(), Icons.folder_rounded, const Color(0xFF0D9488), const Color(0xFFF0FDFA), () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const PengaduanPage(initialFilter: "semua")));
+        }),
+        _statCard("Laporan Baru", baru.toString(), Icons.warning_amber_rounded, const Color(0xFFE03131), const Color(0xFFFFF5F5), () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const PengaduanPage(initialFilter: "baru")));
+        }),
+        _statCard("Sedang Diproses", diproses.toString(), Icons.pending_actions_rounded, const Color(0xFFF59F00), const Color(0xFFFFF9DB), () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const PengaduanPage(initialFilter: "diproses")));
+        }),
+        _statCard("Penyelesaian", selesai.toString(), Icons.check_circle_rounded, const Color(0xFF2F9E44), const Color(0xFFEBFBEE), () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const PengaduanPage(initialFilter: "selesai")));
+        }),
       ],
     );
   }
 
-  Widget _statCard(String label, String value, IconData icon, Color color, Color bg) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.12)),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, color: color, size: 18),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(value, style: TextStyle(color: color, fontSize: 26, fontWeight: FontWeight.bold)),
-              Text(label, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 11, fontWeight: FontWeight.w500)),
-            ],
-          ),
-        ],
+  Widget _statCard(String label, String value, IconData icon, Color color, Color bg, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.12)),
+          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(value, style: TextStyle(color: color, fontSize: 26, fontWeight: FontWeight.bold)),
+                Text(label, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 11, fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

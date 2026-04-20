@@ -27,7 +27,7 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
     setState(() => isLoading = true);
     final res = await ApiService.getAllOrangtua();
     final resSiswa = await ApiService.getAllSiswa();
-    
+
     if (res['success']) {
       setState(() {
         orangtua = res['data'];
@@ -40,7 +40,7 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
         );
       }
     }
-    
+
     if (resSiswa['success']) {
       setState(() {
         siswaList = resSiswa['data'];
@@ -99,15 +99,24 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
   void showForm(BuildContext context, {Map<String, dynamic>? data}) {
     final bool isEdit = data != null;
 
-    final namaCtrl = TextEditingController(text: isEdit ? data['User']['nama_lengkap'] : '');
-    final usernameCtrl = TextEditingController(text: isEdit ? data['User']['username'] : '');
+    final namaCtrl = TextEditingController(
+      text: isEdit ? data['User']['nama_lengkap'] : '',
+    );
+    final usernameCtrl = TextEditingController(
+      text: isEdit ? data['User']['username'] : '',
+    );
     final passwordCtrl = TextEditingController();
-    final emailCtrl = TextEditingController(text: isEdit ? data['User']['email'] : '');
-    final noHpCtrl = TextEditingController(text: isEdit ? data['User']['no_hp'] : '');
+    final emailCtrl = TextEditingController(
+      text: isEdit ? data['User']['email'] : '',
+    );
+    final noHpCtrl = TextEditingController(
+      text: isEdit ? data['User']['no_hp'] : '',
+    );
 
-    
     String? selectedHubungan = isEdit ? data['hubungan'] : 'ayah';
-    int? selectedSiswa = isEdit ? data['id_siswa'] : (siswaList.isNotEmpty ? siswaList[0]['id_siswa'] : null);
+    int? selectedSiswa = isEdit
+        ? data['id_siswa']
+        : (siswaList.isNotEmpty ? siswaList[0]['id_siswa'] : null);
 
     showModalBottomSheet(
       context: context,
@@ -132,25 +141,36 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
                   children: [
                     Text(
                       isEdit ? "Edit Orang Tua" : "Tambah Orang Tua",
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: namaCtrl,
-                      decoration: const InputDecoration(labelText: "Nama Lengkap *", border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: "Nama Lengkap *",
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: usernameCtrl,
-                      decoration: const InputDecoration(labelText: "Username *", border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: "Username *",
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: passwordCtrl,
                       obscureText: true,
                       decoration: InputDecoration(
-                        labelText: isEdit ? "Password (Kosongi jika tidak diubah)" : "Password *",
+                        labelText: isEdit
+                            ? "Password (Kosongi jika tidak diubah)"
+                            : "Password *",
                         border: const OutlineInputBorder(),
                       ),
                     ),
@@ -158,20 +178,32 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
                     TextField(
                       controller: emailCtrl,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(labelText: "Email *", border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: "Email *",
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: noHpCtrl,
                       keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(labelText: "No. HP", border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: "No. HP",
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(labelText: "Hubungan", border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: "Hubungan",
+                        border: OutlineInputBorder(),
+                      ),
                       initialValue: selectedHubungan,
                       items: ['ayah', 'ibu', 'wali'].map((h) {
-                        return DropdownMenuItem(value: h, child: Text(h.toUpperCase()));
+                        return DropdownMenuItem(
+                          value: h,
+                          child: Text(h.toUpperCase()),
+                        );
                       }).toList(),
                       onChanged: (val) {
                         setStateModal(() => selectedHubungan = val);
@@ -179,13 +211,19 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
-                      decoration: const InputDecoration(labelText: "Data Siswa", border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: "Data Siswa",
+                        border: OutlineInputBorder(),
+                      ),
                       value: selectedSiswa,
                       isExpanded: true,
                       items: siswaList.map((s) {
                         return DropdownMenuItem<int>(
                           value: s['id_siswa'],
-                          child: Text("${s['nama_siswa']} (Kelas ${s['kelas']})", overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            "${s['nama_siswa']} (Kelas ${s['kelas']})",
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -198,21 +236,33 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       onPressed: () async {
-                        if (namaCtrl.text.isEmpty || usernameCtrl.text.isEmpty || emailCtrl.text.isEmpty) {
+                        if (namaCtrl.text.isEmpty ||
+                            usernameCtrl.text.isEmpty ||
+                            emailCtrl.text.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Nama, Username, dan Email wajib diisi')),
+                            const SnackBar(
+                              content: Text(
+                                'Nama, Username, dan Email wajib diisi',
+                              ),
+                            ),
                           );
                           return;
                         }
                         if (!isEdit && passwordCtrl.text.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Password wajib diisi untuk data baru')),
+                            const SnackBar(
+                              content: Text(
+                                'Password wajib diisi untuk data baru',
+                              ),
+                            ),
                           );
                           return;
                         }
                         if (selectedSiswa == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Data Siswa wajib dipilih')),
+                            const SnackBar(
+                              content: Text('Data Siswa wajib dipilih'),
+                            ),
                           );
                           return;
                         }
@@ -224,7 +274,7 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
                           "no_hp": noHpCtrl.text,
 
                           "hubungan": selectedHubungan,
-                          "id_siswa": selectedSiswa
+                          "id_siswa": selectedSiswa,
                         };
 
                         if (passwordCtrl.text.isNotEmpty) {
@@ -235,24 +285,40 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
                         setState(() => isLoading = true);
 
                         final res = isEdit
-                            ? await ApiService.updateOrangtua(data['id_orangtua'], payload)
+                            ? await ApiService.updateOrangtua(
+                                data['id_orangtua'],
+                                payload,
+                              )
                             : await ApiService.createOrangtua(payload);
 
                         if (!context.mounted) return;
 
                         if (res['success']) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(isEdit ? 'Berhasil update' : 'Berhasil menambah orang tua')),
+                            SnackBar(
+                              content: Text(
+                                isEdit
+                                    ? 'Berhasil update'
+                                    : 'Berhasil menambah orang tua',
+                              ),
+                            ),
                           );
                           _loadData();
                         } else {
                           setState(() => isLoading = false);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(res['message'] ?? 'Terjadi kesalahan')),
+                            SnackBar(
+                              content: Text(
+                                res['message'] ?? 'Terjadi kesalahan',
+                              ),
+                            ),
                           );
                         }
                       },
-                      child: const Text("Simpan Data", style: TextStyle(fontSize: 16)),
+                      child: const Text(
+                        "Simpan Data",
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ),
                   ],
                 ),
@@ -268,17 +334,28 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Kelola Orang Tua"),
+        title: const Text(
+          "Kelola Orang Tua",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0.5,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => showForm(context),
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             onPressed: () => _loadData(),
-          )
+          ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => showForm(context),
+        backgroundColor: const Color(0xFF0D9488),
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text(
+          'Tambah Orang Tua',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -317,27 +394,44 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
                                         CircleAvatar(
                                           radius: 24,
                                           backgroundColor: Colors.blue.shade100,
-                                          child: const Icon(Icons.person, color: Colors.blue),
+                                          child: const Icon(
+                                            Icons.person,
+                                            color: Colors.blue,
+                                          ),
                                         ),
                                         const SizedBox(width: 16),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                user['nama_lengkap'] ?? 'Tanpa Nama',
-                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                                user['nama_lengkap'] ??
+                                                    'Tanpa Nama',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
                                               ),
                                               const SizedBox(height: 4),
-                                              Text("Username: ${user['username'] ?? '-'}"),
-                                              Text("Siswa: ${siswa['nama_siswa'] ?? '-'} (${p['hubungan']?.toUpperCase() ?? '-'})"),
+                                              Text(
+                                                "Username: ${user['username'] ?? '-'}",
+                                              ),
+                                              Text(
+                                                "Siswa: ${siswa['nama_siswa'] ?? '-'} (${p['hubungan']?.toUpperCase() ?? '-'})",
+                                              ),
                                             ],
                                           ),
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.delete, color: Colors.red),
-                                          onPressed: () => _showDeleteDialog(p['id_orangtua']),
-                                        )
+                                          icon: const Icon(
+                                            Icons.delete,
+                                            color: Colors.red,
+                                          ),
+                                          onPressed: () => _showDeleteDialog(
+                                            p['id_orangtua'],
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -345,7 +439,7 @@ class _KelolaPengaduPageState extends State<KelolaPengaduPage> {
                               );
                             },
                           ),
-                  )
+                  ),
                 ],
               ),
             ),

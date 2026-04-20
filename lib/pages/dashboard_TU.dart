@@ -3,6 +3,8 @@ import '../models/models.dart';
 import '../services/api_service.dart';
 import '../services/notification_service.dart';
 import 'notification_page.dart';
+import 'dart:io';
+import '../services/profile_image_service.dart';
 
 class DashboardTU extends StatefulWidget {
   final Function(String screen) onNavigate;
@@ -19,6 +21,7 @@ class DashboardTU extends StatefulWidget {
 class _DashboardTUState extends State<DashboardTU> {
   Map<String, dynamic>? userData;
   List<Pengaduan> listPengaduan = [];
+  File? _profileImage;
   int countSiswa = 0;
   int countPetugas = 0;
   int countPengadu = 0;
@@ -29,6 +32,12 @@ class _DashboardTUState extends State<DashboardTU> {
   void initState() {
     super.initState();
     _fetchData();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final img = await ProfileImageService.loadProfileImage();
+    if (mounted) setState(() => _profileImage = img);
   }
 
   Future<void> _fetchData() async {
@@ -82,13 +91,14 @@ class _DashboardTUState extends State<DashboardTU> {
       _unreadNotifCount = unread;
       isLoading = false;
     });
+    _loadProfileImage();
   }
 
 
   // ======================== HELPERS ========================
   Color _statusColor(StatusPengaduan s) {
     switch (s) {
-      case StatusPengaduan.masuk: return const Color(0xFF3B5BDB);
+      case StatusPengaduan.masuk: return const Color(0xFF0D9488);
       case StatusPengaduan.diproses: return const Color(0xFFF59F00);
       case StatusPengaduan.selesai: return const Color(0xFF2F9E44);
       case StatusPengaduan.ditolak: return const Color(0xFFE03131);
@@ -141,7 +151,7 @@ class _DashboardTUState extends State<DashboardTU> {
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF2F4AC2), Color(0xFF4C6EF5), Color(0xFF748FFC)],
+          colors: [Color(0xFF0F766E), Color(0xFF0D9488), Color(0xFF14B8A6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -203,15 +213,19 @@ class _DashboardTUState extends State<DashboardTU> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
-                        ),
-                        child: const CircleAvatar(
-                          radius: 28,
-                          backgroundColor: Colors.white24,
-                          child: Icon(Icons.shield_rounded, size: 30, color: Colors.white),
+                      GestureDetector(
+                        onTap: () => widget.onNavigate('profil'),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
+                          ),
+                          child: CircleAvatar(
+                            radius: 28,
+                            backgroundColor: Colors.white24,
+                            backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                            child: _profileImage == null ? const Icon(Icons.shield_rounded, size: 30, color: Colors.white) : null,
+                          ),
                         ),
                       ),
                     ],
@@ -508,7 +522,7 @@ class _DashboardTUState extends State<DashboardTU> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF0F2FF),
+        backgroundColor: Color(0xFFF0FDFA),
         body: Center(child: CircularProgressIndicator()),
       );
     }
@@ -522,7 +536,7 @@ class _DashboardTUState extends State<DashboardTU> {
       // Menggunakan data real dari database
 
       return Scaffold(
-        backgroundColor: const Color(0xFFF0F2FF),
+        backgroundColor: const Color(0xFFF0FDFA),
         body: RefreshIndicator(
           onRefresh: _fetchData,
           child: SingleChildScrollView(

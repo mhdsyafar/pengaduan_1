@@ -3,7 +3,8 @@ import '../services/api_service.dart';
 import '../models/models.dart';
 
 class LaporanView extends StatefulWidget {
-  const LaporanView({super.key});
+  final String initialFilter;
+  const LaporanView({super.key, this.initialFilter = 'Semua'});
 
   @override
   State<LaporanView> createState() => _LaporanViewState();
@@ -11,7 +12,7 @@ class LaporanView extends StatefulWidget {
 
 class _LaporanViewState extends State<LaporanView> {
   static const Color _primary = Color(0xFF7048E8);
-  String _selectedFilter = 'Semua';
+  late String _selectedFilter;
   bool _isLoading = true;
 
   final _filters = ['Semua', 'Diproses', 'Selesai', 'Menunggu', 'Ditolak'];
@@ -20,6 +21,7 @@ class _LaporanViewState extends State<LaporanView> {
   @override
   void initState() {
     super.initState();
+    _selectedFilter = widget.initialFilter;
     _fetchLaporan();
   }
 

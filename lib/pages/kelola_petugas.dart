@@ -278,17 +278,22 @@ class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Kelola Pengguna"),
+        title: const Text("Kelola Pengguna", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0.5,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => showForm(context),
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             onPressed: () => _loadData(),
           )
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => showForm(context),
+        backgroundColor: const Color(0xFF0D9488),
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text('Tambah Pengguna', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

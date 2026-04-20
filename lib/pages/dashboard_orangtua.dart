@@ -4,20 +4,25 @@ import '../services/notification_service.dart';
 import '../models/models.dart';
 import 'pengaduan_page.dart';
 import 'notification_page.dart';
+import 'status_pengaduan_page.dart';
+import 'dart:io';
+import '../services/profile_image_service.dart';
 
 class DashboardOrangTua extends StatefulWidget {
   final VoidCallback? onAddTap;
-  const DashboardOrangTua({super.key, this.onAddTap});
+  final VoidCallback? onProfileTap;
+  const DashboardOrangTua({super.key, this.onAddTap, this.onProfileTap});
 
   @override
   State<DashboardOrangTua> createState() => _DashboardOrangTuaState();
 }
 
 class _DashboardOrangTuaState extends State<DashboardOrangTua> {
-  static const Color _primary = Color(0xFF2F4AC2);
+  static const Color _primary = Color(0xFF0D9488);
   
   Map<String, dynamic>? userData;
   List<Pengaduan> listPengaduan = [];
+  File? _profileImage;
   bool isLoading = true;
   int _unreadNotifCount = 0;
 
@@ -25,6 +30,12 @@ class _DashboardOrangTuaState extends State<DashboardOrangTua> {
   void initState() {
     super.initState();
     _fetchData();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final img = await ProfileImageService.loadProfileImage();
+    if (mounted) setState(() => _profileImage = img);
   }
 
   Future<void> _fetchData() async {
@@ -48,13 +59,14 @@ class _DashboardOrangTuaState extends State<DashboardOrangTua> {
       _unreadNotifCount = unread;
       isLoading = false;
     });
+    _loadProfileImage();
   }
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF0F2FF),
+        backgroundColor: Color(0xFFF0FDFA),
         body: Center(child: CircularProgressIndicator()),
       );
     }
@@ -68,7 +80,7 @@ class _DashboardOrangTuaState extends State<DashboardOrangTua> {
     final selesai = listPengaduan.where((e) => e.status == StatusPengaduan.selesai).length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2FF),
+      backgroundColor: const Color(0xFFF0FDFA),
       body: RefreshIndicator(
         onRefresh: _fetchData,
         child: SingleChildScrollView(
@@ -82,9 +94,9 @@ class _DashboardOrangTuaState extends State<DashboardOrangTua> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 4),
-                    _buildStatGrid(menunggu, diproses, selesai),
+                    _buildStatGrid(context, menunggu, diproses, selesai),
                     const SizedBox(height: 20),
-                    _buildTotalBar(total, selesai),
+                    _buildTotalBar(context, total, selesai),
                     const SizedBox(height: 24),
                     const Text('Laporan Anda', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1C1C3A))),
                     const SizedBox(height: 12),
@@ -118,7 +130,7 @@ class _DashboardOrangTuaState extends State<DashboardOrangTua> {
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF2F4AC2), Color(0xFF4C6EF5), Color(0xFF748FFC)],
+          colors: [Color(0xFF0F766E), Color(0xFF0D9488), Color(0xFF14B8A6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -180,15 +192,19 @@ class _DashboardOrangTuaState extends State<DashboardOrangTua> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
-                        ),
-                        child: const CircleAvatar(
-                          radius: 28,
-                          backgroundColor: Colors.white24,
-                          child: Icon(Icons.person_rounded, size: 30, color: Colors.white),
+                      GestureDetector(
+                        onTap: widget.onProfileTap,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
+                          ),
+                          child: CircleAvatar(
+                            radius: 28,
+                            backgroundColor: Colors.white24,
+                            backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                            child: _profileImage == null ? const Icon(Icons.person_rounded, size: 30, color: Colors.white) : null,
+                          ),
                         ),
                       ),
                     ],
@@ -233,76 +249,90 @@ class _DashboardOrangTuaState extends State<DashboardOrangTua> {
   }
 
   // ======================== STAT GRID ========================
-  Widget _buildStatGrid(int menunggu, int diproses, int selesai) {
+  Widget _buildStatGrid(BuildContext context, int menunggu, int diproses, int selesai) {
     return Row(
       children: [
-        Expanded(child: _statCard("Menunggu", menunggu.toString(), Icons.access_time_rounded, const Color(0xFFEA6C00), const Color(0xFFFFF4E6))),
+        Expanded(child: _statCard("Menunggu", menunggu.toString(), Icons.access_time_rounded, const Color(0xFFEA6C00), const Color(0xFFFFF4E6), () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const StatusPengaduanPage(initialFilter: 'menunggu')));
+        })),
         const SizedBox(width: 12),
-        Expanded(child: _statCard("Diproses", diproses.toString(), Icons.sync_rounded, const Color(0xFF3B5BDB), const Color(0xFFEDF2FF))),
+        Expanded(child: _statCard("Diproses", diproses.toString(), Icons.sync_rounded, const Color(0xFF3B5BDB), const Color(0xFFEDF2FF), () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const StatusPengaduanPage(initialFilter: 'diproses')));
+        })),
         const SizedBox(width: 12),
-        Expanded(child: _statCard("Selesai", selesai.toString(), Icons.check_circle_rounded, const Color(0xFF2F9E44), const Color(0xFFEBFBEE))),
+        Expanded(child: _statCard("Selesai", selesai.toString(), Icons.check_circle_rounded, const Color(0xFF2F9E44), const Color(0xFFEBFBEE), () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const StatusPengaduanPage(initialFilter: 'selesai')));
+        })),
       ],
     );
   }
 
-  Widget _statCard(String label, String value, IconData icon, Color color, Color bg) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.12)),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, color: color, size: 18),
-          ),
-          const SizedBox(height: 8),
-          Text(value, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.bold)),
-          Text(label, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.w600)),
-        ],
+  Widget _statCard(String label, String value, IconData icon, Color color, Color bg, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.12)),
+          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(height: 8),
+            Text(value, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.bold)),
+            Text(label, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.w600)),
+          ],
+        ),
       ),
     );
   }
 
   // ======================== TOTAL BAR ========================
-  Widget _buildTotalBar(int total, int selesai) {
+  Widget _buildTotalBar(BuildContext context, int total, int selesai) {
     final persen = total > 0 ? (selesai / total * 100).toInt() : 0;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12)],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.receipt_long_rounded, color: _primary, size: 20),
-              const SizedBox(width: 8),
-              const Text("Total Pengaduan", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-              const Spacer(),
-              Text('$persen%', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-              const SizedBox(width: 8),
-              Text(total.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _primary)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-               value: total > 0 ? (selesai / total) : 0,
-              minHeight: 8,
-              backgroundColor: Colors.grey.shade100,
-              valueColor: AlwaysStoppedAnimation<Color>((total > 0 && selesai == total) ? const Color(0xFF2F9E44) : _primary),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const StatusPengaduanPage(initialFilter: 'semua')));
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12)],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.receipt_long_rounded, color: _primary, size: 20),
+                const SizedBox(width: 8),
+                const Text("Total Pengaduan", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                const Spacer(),
+                Text('$persen%', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                const SizedBox(width: 8),
+                Text(total.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _primary)),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                 value: total > 0 ? (selesai / total) : 0,
+                minHeight: 8,
+                backgroundColor: Colors.grey.shade100,
+                valueColor: AlwaysStoppedAnimation<Color>((total > 0 && selesai == total) ? const Color(0xFF2F9E44) : _primary),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

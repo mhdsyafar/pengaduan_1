@@ -3,6 +3,8 @@ import '../services/api_service.dart';
 import '../services/notification_service.dart';
 import 'login_page.dart';
 import 'help_support_page.dart';
+import 'dart:io';
+import '../services/profile_image_service.dart';
 
 class ProfilTUPage extends StatefulWidget {
   const ProfilTUPage({super.key});
@@ -14,6 +16,7 @@ class ProfilTUPage extends StatefulWidget {
 class _ProfilTUPageState extends State<ProfilTUPage> {
   static const Color _primary = Color(0xFF6366F1); // Indigo
   Map<String, dynamic>? _userData;
+  File? _profileImage;
   bool _isLoading = true;
   bool _notifStatus = true;
   bool _notifEmail = true;
@@ -23,6 +26,55 @@ class _ProfilTUPageState extends State<ProfilTUPage> {
     super.initState();
     _fetchUserData();
     _loadNotifSetting();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final image = await ProfileImageService.loadProfileImage();
+    if (mounted) setState(() => _profileImage = image);
+  }
+
+  Future<void> _changeProfileImage() async {
+    final image = await ProfileImageService.pickAndSaveImage();
+    if (image != null && mounted) {
+      setState(() => _profileImage = image);
+    }
+  }
+
+  Future<void> _removeProfileImage() async {
+    await ProfileImageService.removeProfileImage();
+    if (mounted) setState(() => _profileImage = null);
+  }
+
+  void _showProfileImageOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Pilih Foto Baru'),
+              onTap: () {
+                Navigator.pop(context);
+                _changeProfileImage();
+              },
+            ),
+            if (_profileImage != null)
+              ListTile(
+                leading: const Icon(Icons.delete_rounded, color: Colors.red),
+                title: const Text('Hapus Foto', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _removeProfileImage();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _loadNotifSetting() async {
@@ -125,9 +177,17 @@ class _ProfilTUPageState extends State<ProfilTUPage> {
                 ],
               ),
               const SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 3)),
-                child: const CircleAvatar(radius: 40, backgroundColor: Colors.white24, child: Icon(Icons.admin_panel_settings_rounded, size: 40, color: Colors.white)),
+              GestureDetector(
+                onTap: _showProfileImageOptions,
+                child: Container(
+                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 3)),
+                  child: CircleAvatar(
+                    radius: 40, 
+                    backgroundColor: Colors.white24, 
+                    backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                    child: _profileImage == null ? const Icon(Icons.admin_panel_settings_rounded, size: 40, color: Colors.white) : null,
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               const Text('Administrator TU / Staf Admin', style: TextStyle(color: Colors.white70, fontSize: 13)),

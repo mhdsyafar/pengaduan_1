@@ -17,7 +17,7 @@ class _NavbarTUState extends State<NavbarTU> {
   int _idx = 0;
   late List<Widget> _pages;
 
-  static const Color _primary = Color(0xFF3B5BDB);
+  static const Color _primary = Color(0xFF0D9488);
 
   void _navigateTo(String screen) {
     final map = {

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/notification_service.dart';
 import 'login_page.dart';
+import 'dart:io';
+import '../services/profile_image_service.dart';
 
 /* =======================
    PAGE PROFIL
@@ -17,7 +19,7 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
   static const Color _primary = Color(0xFF7048E8);
 
   bool _notifPengaduan = true;
-  bool _notifLaporan = false;
+  File? _profileImage;
 
   late Future<Map<String, dynamic>?> futureUser;
 
@@ -26,6 +28,55 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
     super.initState();
     futureUser = ApiService.getUserData();
     _loadNotifSetting();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final image = await ProfileImageService.loadProfileImage();
+    if (mounted) setState(() => _profileImage = image);
+  }
+
+  Future<void> _changeProfileImage() async {
+    final image = await ProfileImageService.pickAndSaveImage();
+    if (image != null && mounted) {
+      setState(() => _profileImage = image);
+    }
+  }
+
+  Future<void> _removeProfileImage() async {
+    await ProfileImageService.removeProfileImage();
+    if (mounted) setState(() => _profileImage = null);
+  }
+
+  void _showProfileImageOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Pilih Foto Baru'),
+              onTap: () {
+                Navigator.pop(context);
+                _changeProfileImage();
+              },
+            ),
+            if (_profileImage != null)
+              ListTile(
+                leading: const Icon(Icons.delete_rounded, color: Colors.red),
+                title: const Text('Hapus Foto', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _removeProfileImage();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _loadNotifSetting() async {
@@ -61,13 +112,6 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
                         await NotificationService.setEnabled(v);
                       },
                     ),
-                    _buildSwitchTile(
-                      Icons.summarize,
-                      "Ringkasan Harian",
-                      "Statistik harian",
-                      _notifLaporan,
-                      (v) => setState(() => _notifLaporan = v),
-                    ),
                   ]),
                   const SizedBox(height: 20),
                   _buildLogoutButton(),
@@ -88,6 +132,17 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
       expandedHeight: 200,
       pinned: true,
       backgroundColor: _primary,
+      actions: [
+        IconButton(
+          onPressed: () {
+            futureUser.then((user) {
+              if (user != null) _showEditProfileDialog(user);
+            });
+          },
+          icon: const Icon(Icons.edit_note_rounded, color: Colors.white),
+          tooltip: 'Edit Profil',
+        )
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(
@@ -117,10 +172,14 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const CircleAvatar(
-                        radius: 42,
-                        backgroundColor: Colors.white,
-                        child: Icon(Icons.school, size: 44, color: _primary),
+                      GestureDetector(
+                        onTap: _showProfileImageOptions,
+                        child: CircleAvatar(
+                          radius: 42,
+                          backgroundColor: Colors.white,
+                          backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                          child: _profileImage == null ? const Icon(Icons.school, size: 44, color: _primary) : null,
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Text(
@@ -157,6 +216,8 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
 
         final user = snapshot.data ?? {};
         final nama = user['nama_lengkap'] ?? user['username'] ?? 'Kepala Sekolah';
+        final email = user['email'] ?? 'Tidak ada email';
+        final phone = user['no_hp'] ?? '-';
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -166,8 +227,11 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
           ),
           child: Column(
             children: [
-              _infoRow(Icons.person, "Username", nama),
-              const Divider(),
+              _infoRow(Icons.person, "Nama Lengkap", nama),
+              const Divider(height: 24),
+              _infoRow(Icons.email, "Email", email),
+              const Divider(height: 24),
+              _infoRow(Icons.phone, "Nomor Telepon", phone),
             ],
           ),
         );
@@ -234,6 +298,49 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
       title: Text(title),
       subtitle: Text(subtitle),
       secondary: Icon(icon, color: _primary),
+    );
+  }
+
+  void _showEditProfileDialog(Map<String, dynamic> user) {
+    final nameController = TextEditingController(text: user['nama_lengkap']);
+    final emailController = TextEditingController(text: user['email']);
+    final phoneController = TextEditingController(text: user['no_hp']);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Profil'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Nama Lengkap')),
+            TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email')),
+            TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Nomor Telepon')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () async {
+              final result = await ApiService.updateMyProfile({
+                'nama_lengkap': nameController.text,
+                'email': emailController.text,
+                'no_hp': phoneController.text,
+              });
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'] ?? (result['success'] ? 'Berhasil' : 'Gagal'))));
+              if (result['success']) {
+                setState(() {
+                  futureUser = ApiService.getUserData();
+                });
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: _primary),
+            child: const Text('Simpan', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 

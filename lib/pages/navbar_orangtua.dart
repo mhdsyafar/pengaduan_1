@@ -19,7 +19,10 @@ class _NavbarOrangTuaState extends State<NavbarOrangTua> {
   void initState() {
     super.initState();
     _pages = [
-      DashboardOrangTua(onAddTap: () => setState(() => _currentIndex = 2)),
+      DashboardOrangTua(
+        onAddTap: () => setState(() => _currentIndex = 2),
+        onProfileTap: () => setState(() => _currentIndex = 3),
+      ),
       const StatusPengaduanPage(),
       const PengaduanPage(),
       const ProfileOrangTua(),
@@ -64,7 +67,7 @@ class _NavbarOrangTuaState extends State<NavbarOrangTua> {
 
   Widget _buildNavItem(int index, IconData icon, String label) {
     final isSelected = _currentIndex == index;
-    final color = isSelected ? const Color(0xFF2F4AC2) : Colors.grey.shade400;
+    final color = isSelected ? const Color(0xFF0D9488) : Colors.grey.shade400;
 
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
@@ -73,7 +76,7 @@ class _NavbarOrangTuaState extends State<NavbarOrangTua> {
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF2F4AC2).withValues(alpha: 0.1) : Colors.transparent,
+          color: isSelected ? const Color(0xFF0D9488).withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
