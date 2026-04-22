@@ -19,7 +19,6 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
   File? _profileImage;
   bool _isLoading = true;
   bool _notifStatus = true;
-  bool _notifSms = false;
 
   @override
   void initState() {
@@ -49,7 +48,9 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
   void _showProfileImageOptions() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -65,7 +66,10 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
             if (_profileImage != null)
               ListTile(
                 leading: const Icon(Icons.delete_rounded, color: Colors.red),
-                title: const Text('Hapus Foto', style: TextStyle(color: Colors.red)),
+                title: const Text(
+                  'Hapus Foto',
+                  style: TextStyle(color: Colors.red),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _removeProfileImage();
@@ -94,7 +98,9 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response['message'] ?? 'Gagal mengambil data')),
+          SnackBar(
+            content: Text(response['message'] ?? 'Gagal mengambil data'),
+          ),
         );
       }
     }
@@ -110,12 +116,12 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
     final nama = user['nama_lengkap'] ?? 'Orang Tua / Wali';
     final email = user['email'] ?? 'Tidak ada email';
     final noHp = user['no_hp'] ?? '-';
-    
+
     // Get children info
     final List childrenList = user['children'] ?? [];
     String namaAnak = 'Tidak ada data';
     String kelasAnak = 'Tidak ada data';
-    
+
     if (childrenList.isNotEmpty) {
       namaAnak = childrenList.map((c) => c['nama_siswa']).join(', ');
       kelasAnak = childrenList.map((c) => c['kelas']).toSet().join(', ');
@@ -177,31 +183,65 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const SizedBox(width: 40),
-                  const Text('Profil Saya', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Profil Saya',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   IconButton(
                     onPressed: () => _showEditProfileDialog(),
-                    icon: const Icon(Icons.edit_note_rounded, color: Colors.white),
+                    icon: const Icon(
+                      Icons.edit_note_rounded,
+                      color: Colors.white,
+                    ),
                     tooltip: 'Edit Profil',
-                  )
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
               GestureDetector(
                 onTap: _showProfileImageOptions,
                 child: Container(
-                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 3)),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 3,
+                    ),
+                  ),
                   child: CircleAvatar(
-                    radius: 40, 
-                    backgroundColor: Colors.white24, 
-                    backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
-                    child: _profileImage == null ? const Icon(Icons.person_rounded, size: 40, color: Colors.white) : null,
+                    radius: 40,
+                    backgroundColor: Colors.white24,
+                    backgroundImage: _profileImage != null
+                        ? FileImage(_profileImage!)
+                        : null,
+                    child: _profileImage == null
+                        ? const Icon(
+                            Icons.person_rounded,
+                            size: 40,
+                            color: Colors.white,
+                          )
+                        : null,
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              Text(namaLengkap, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+              Text(
+                namaLengkap,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 4),
-              const Text('Orang Tua / Wali Murid', style: TextStyle(color: Colors.white70, fontSize: 13)),
+              const Text(
+                'Orang Tua / Wali Murid',
+                style: TextStyle(color: Colors.white70, fontSize: 13),
+              ),
             ],
           ),
         ),
@@ -213,15 +253,36 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
   Widget _buildSectionTitle(String title) {
     return Align(
       alignment: Alignment.centerLeft,
-      child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1C1C3A))),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF1C1C3A),
+        ),
+      ),
     );
   }
 
   // ======================== CARDS ========================
-  Widget _buildInfoCard(String email, String noHp, String kelas, String namaAnak) {
+  Widget _buildInfoCard(
+    String email,
+    String noHp,
+    String kelas,
+    String namaAnak,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+          ),
+        ],
+      ),
       child: Column(
         children: [
           _infoRow(Icons.email_rounded, 'Email', email),
@@ -239,13 +300,33 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
   Widget _infoRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: _primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: _primary, size: 18)),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: _primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: _primary, size: 18),
+        ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-            Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
-          ]),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -253,24 +334,29 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
 
   Widget _buildSettingsCard() {
     return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+          ),
+        ],
+      ),
       child: Column(
         children: [
           SwitchListTile(
             activeThumbColor: _primary,
-            title: const Text('Notifikasi Status Pengaduan', style: TextStyle(fontSize: 14)),
+            title: const Text(
+              'Notifikasi Status Pengaduan',
+              style: TextStyle(fontSize: 14),
+            ),
             value: _notifStatus,
             onChanged: (v) async {
               setState(() => _notifStatus = v);
               await NotificationService.setEnabled(v);
             },
-          ),
-          const Divider(height: 1, indent: 16, endIndent: 16),
-          SwitchListTile(
-            activeThumbColor: _primary,
-            title: const Text('Notifikasi Email', style: TextStyle(fontSize: 14)),
-            value: _notifSms,
-            onChanged: (v) => setState(() => _notifSms = v),
           ),
         ],
       ),
@@ -279,22 +365,43 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
 
   Widget _buildAccountCard(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+          ),
+        ],
+      ),
       child: Column(
         children: [
           ListTile(
             leading: const Icon(Icons.lock_rounded, color: Colors.grey),
             title: const Text('Ubah Password', style: TextStyle(fontSize: 14)),
-            trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.grey,
+            ),
             onTap: () => _showChangePasswordDialog(),
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
           ListTile(
             leading: const Icon(Icons.help_outline_rounded, color: Colors.grey),
-            title: const Text('Pusat Bantuan & FAQ', style: TextStyle(fontSize: 14)),
-            trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+            title: const Text(
+              'Pusat Bantuan & FAQ',
+              style: TextStyle(fontSize: 14),
+            ),
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.grey,
+            ),
             onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpSupportPage()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HelpSupportPage()),
+              );
             },
           ),
         ],
@@ -304,7 +411,9 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
 
   // ======================== DIALOGS ========================
   void _showEditProfileDialog() {
-    final nameController = TextEditingController(text: _userData?['nama_lengkap']);
+    final nameController = TextEditingController(
+      text: _userData?['nama_lengkap'],
+    );
     final emailController = TextEditingController(text: _userData?['email']);
     final phoneController = TextEditingController(text: _userData?['no_hp']);
 
@@ -315,13 +424,25 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Nama Lengkap')),
-            TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email')),
-            TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Nomor Telepon')),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Nama Lengkap'),
+            ),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+            TextField(
+              controller: phoneController,
+              decoration: const InputDecoration(labelText: 'Nomor Telepon'),
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
             onPressed: () async {
               final result = await ApiService.updateMyProfile({
@@ -331,7 +452,14 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
               });
               if (!context.mounted) return;
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'] ?? (result['success'] ? 'Berhasil' : 'Gagal'))));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    result['message'] ??
+                        (result['success'] ? 'Berhasil' : 'Gagal'),
+                  ),
+                ),
+              );
               if (result['success']) _fetchUserData();
             },
             child: const Text('Simpan'),
@@ -353,23 +481,49 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: oldPass, obscureText: true, decoration: const InputDecoration(labelText: 'Password Lama')),
-            TextField(controller: newPass, obscureText: true, decoration: const InputDecoration(labelText: 'Password Baru')),
-            TextField(controller: confirmPass, obscureText: true, decoration: const InputDecoration(labelText: 'Konfirmasi Password')),
+            TextField(
+              controller: oldPass,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Password Lama'),
+            ),
+            TextField(
+              controller: newPass,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Password Baru'),
+            ),
+            TextField(
+              controller: confirmPass,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Konfirmasi Password',
+              ),
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
             onPressed: () async {
               if (newPass.text != confirmPass.text) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Konfirmasi password tidak cocok')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Konfirmasi password tidak cocok'),
+                  ),
+                );
                 return;
               }
-              final result = await ApiService.changePassword(oldPass.text, newPass.text);
+              final result = await ApiService.changePassword(
+                oldPass.text,
+                newPass.text,
+              );
               if (!context.mounted) return;
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'])));
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(result['message'])));
             },
             child: const Text('Ubah'),
           ),
@@ -387,15 +541,24 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
           backgroundColor: const Color(0xFFE03131).withValues(alpha: 0.1),
           foregroundColor: const Color(0xFFE03131),
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           elevation: 0,
         ),
         onPressed: () async {
           await ApiService.logout();
           if (!context.mounted) return;
-          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginPage()), (route) => false);
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginPage()),
+            (route) => false,
+          );
         },
-        child: const Text('Keluar dari Akun', style: TextStyle(fontWeight: FontWeight.bold)),
+        child: const Text(
+          'Keluar dari Akun',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
