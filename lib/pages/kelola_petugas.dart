@@ -121,6 +121,7 @@ class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
       builder: (_) {
         return StatefulBuilder(
           builder: (context, setStateModal) {
+            bool isSubmitting = false;
             return Padding(
               padding: EdgeInsets.only(
                 left: 16,
@@ -200,7 +201,7 @@ class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: () async {
+                      onPressed: isSubmitting ? null : () async {
                         if (namaCtrl.text.isEmpty || usernameCtrl.text.isEmpty || emailCtrl.text.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Nama, Username, dan Email wajib diisi')),
@@ -241,8 +242,8 @@ class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
                           }
                         }
 
-                        Navigator.pop(context);
-                        setState(() => isLoading = true);
+                        // Tampilkan loading di tombol
+                        setStateModal(() => isSubmitting = true);
 
                         final res = isEdit
                             ? await ApiService.updateUser(data['id_user'], payload)
@@ -250,19 +251,36 @@ class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
 
                         if (!context.mounted) return;
 
+                        // Tutup dialog setelah API selesai
+                        Navigator.pop(context);
+
                         if (res['success']) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(isEdit ? 'Berhasil mengupdate petugas' : 'Berhasil menambah petugas')),
+                            SnackBar(
+                              content: Text(isEdit ? 'Berhasil mengupdate petugas' : 'Berhasil menambah petugas'),
+                              backgroundColor: Colors.green.shade600,
+                              behavior: SnackBarBehavior.floating,
+                            ),
                           );
                           _loadData();
                         } else {
-                          setState(() => isLoading = false);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(res['message'] ?? 'Terjadi kesalahan')),
+                            SnackBar(
+                              content: Text(res['message'] ?? 'Terjadi kesalahan'),
+                              backgroundColor: Colors.red.shade600,
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 5),
+                            ),
                           );
                         }
                       },
-                      child: const Text("Simpan Data", style: TextStyle(fontSize: 16)),
+                      child: isSubmitting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text("Simpan Data", style: TextStyle(fontSize: 16)),
                     ),
                   ],
                 ),

@@ -723,20 +723,22 @@ class ApiService {
             },
             body: jsonEncode(body),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 30)); // Diperpanjang untuk Render cold start
 
       final data = jsonDecode(response.body);
       if ((response.statusCode == 201 || response.statusCode == 200) &&
           data['success'] == true) {
         return {'success': true, 'data': data['data']};
       } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Gagal membuat user',
-        };
+        // Handle berbagai jenis error dengan pesan yang jelas
+        final message = data['message'] ?? 'Gagal membuat user (status: ${response.statusCode})';
+        return {'success': false, 'message': message};
       }
     } catch (e) {
-      return {'success': false, 'message': 'Tidak dapat terhubung: $e'};
+      if (e.toString().contains('TimeoutException')) {
+        return {'success': false, 'message': 'Server sedang loading, coba lagi dalam 30 detik'};
+      }
+      return {'success': false, 'message': 'Tidak dapat terhubung ke server: $e'};
     }
   }
 
