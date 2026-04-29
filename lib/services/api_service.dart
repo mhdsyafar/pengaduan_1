@@ -76,6 +76,7 @@ class ApiService {
     if (token == null) return null;
 
     return {
+      'token': token,
       'id_user': prefs.getInt('id_user'),
       'username': prefs.getString('username'),
       'nama_lengkap': prefs.getString('nama_lengkap'),

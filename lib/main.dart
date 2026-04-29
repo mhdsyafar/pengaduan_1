@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'pages/login_page.dart';
+import 'pages/splash_screen.dart';
 import 'pages/profile_orangtua.dart';
 
 void main() {
@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const LoginPage(),
+      home: const SplashScreen(),
       routes: {
         '/profile': (context) => const ProfileOrangTua(),
       },
