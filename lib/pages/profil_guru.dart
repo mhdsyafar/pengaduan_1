@@ -19,7 +19,6 @@ class _ProfilGuruState extends State<ProfilGuru> {
   File? _profileImage;
   bool _isLoading = true;
   bool _notifNew = true;
-  bool _notifEmail = false;
 
   @override
   void initState() {
@@ -259,13 +258,6 @@ class _ProfilGuruState extends State<ProfilGuru> {
               setState(() => _notifNew = v);
               await NotificationService.setEnabled(v);
             },
-          ),
-          const Divider(height: 1, indent: 16, endIndent: 16),
-          SwitchListTile(
-            activeThumbColor: _primary,
-            title: const Text('Laporan via Email', style: TextStyle(fontSize: 14)),
-            value: _notifEmail,
-            onChanged: (v) => setState(() => _notifEmail = v),
           ),
         ],
       ),

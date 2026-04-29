@@ -19,7 +19,6 @@ class _ProfilTUPageState extends State<ProfilTUPage> {
   File? _profileImage;
   bool _isLoading = true;
   bool _notifStatus = true;
-  bool _notifEmail = true;
 
   @override
   void initState() {
@@ -253,13 +252,6 @@ class _ProfilTUPageState extends State<ProfilTUPage> {
               setState(() => _notifStatus = v);
               await NotificationService.setEnabled(v);
             },
-          ),
-          const Divider(height: 1, indent: 16, endIndent: 16),
-          SwitchListTile(
-            activeThumbColor: _primary,
-            title: const Text('Pengingat Review Harian', style: TextStyle(fontSize: 14)),
-            value: _notifEmail,
-            onChanged: (v) => setState(() => _notifEmail = v),
           ),
         ],
       ),

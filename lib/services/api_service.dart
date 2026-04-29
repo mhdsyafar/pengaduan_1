@@ -89,13 +89,19 @@ class ApiService {
   /// LOGOUT
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Hapus kredensial login saja, pertahankan profile_pic_* dan pengaturan notifikasi
     final keysToRemove = [
-      'token', 'id_user', 'username', 'nama_lengkap', 
-      'email', 'id_role', 'kelas', 'no_hp'
+      'token',
+      'id_user',
+      'username',
+      'nama_lengkap',
+      'email',
+      'id_role',
+      'kelas',
+      'no_hp',
     ];
-    
+
     for (String key in keysToRemove) {
       await prefs.remove(key);
     }
@@ -138,19 +144,24 @@ class ApiService {
   }
 
   /// UPDATE PROFIL SENDIRI
-  static Future<Map<String, dynamic>> updateMyProfile(Map<String, dynamic> body) async {
+  static Future<Map<String, dynamic>> updateMyProfile(
+    Map<String, dynamic> body,
+  ) async {
     try {
       final token = await getToken();
-      if (token == null) return {'success': false, 'message': 'Token tidak ditemukan'};
+      if (token == null)
+        return {'success': false, 'message': 'Token tidak ditemukan'};
 
-      final response = await http.put(
-        Uri.parse('$baseUrl/auth/me'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/auth/me'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 10));
 
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
@@ -164,7 +175,10 @@ class ApiService {
         }
         return {'success': true, 'data': userData};
       } else {
-        return {'success': false, 'message': data['message'] ?? 'Gagal update profil'};
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Gagal update profil',
+        };
       }
     } catch (e) {
       return {'success': false, 'message': 'Error: $e'};
@@ -172,27 +186,37 @@ class ApiService {
   }
 
   /// UBAH PASSWORD
-  static Future<Map<String, dynamic>> changePassword(String currentPassword, String newPassword) async {
+  static Future<Map<String, dynamic>> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
     try {
       final token = await getToken();
-      if (token == null) return {'success': false, 'message': 'Token tidak ditemukan'};
+      if (token == null)
+        return {'success': false, 'message': 'Token tidak ditemukan'};
 
-      final response = await http.put(
-        Uri.parse('$baseUrl/auth/me/password'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'current_password': currentPassword,
-          'new_password': newPassword
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/auth/me/password'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode({
+              'current_password': currentPassword,
+              'new_password': newPassword,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
 
       final data = jsonDecode(response.body);
       return {
         'success': data['success'] == true,
-        'message': data['message'] ?? (data['success'] == true ? 'Password berhasil diubah' : 'Gagal ubah password')
+        'message':
+            data['message'] ??
+            (data['success'] == true
+                ? 'Password berhasil diubah'
+                : 'Gagal ubah password'),
       };
     } catch (e) {
       return {'success': false, 'message': 'Error: $e'};
@@ -780,4 +804,3 @@ class ApiService {
     }
   }
 }
-
