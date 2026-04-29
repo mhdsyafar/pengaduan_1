@@ -119,7 +119,17 @@ class _LoginPageState extends State<LoginPage> {
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
                     ),
-                    child: const Icon(Icons.school_rounded, size: 44, color: Colors.white),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.school_rounded,
+                          size: 44,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
