@@ -803,4 +803,34 @@ class ApiService {
       return {'success': false, 'message': 'Tidak dapat terhubung: $e'};
     }
   }
+
+  /// DELETE PENGADUAN
+  static Future<Map<String, dynamic>> deletePengaduan(String id) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return {'success': false, 'message': 'Token tidak ditemukan'};
+      }
+
+      final response = await http
+          .delete(
+            Uri.parse('$baseUrl/pengaduan/$id'),
+            headers: {'Authorization': 'Bearer $token'},
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true};
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Gagal menghapus pengaduan',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Tidak dapat terhubung: $e'};
+    }
+  }
 }
+

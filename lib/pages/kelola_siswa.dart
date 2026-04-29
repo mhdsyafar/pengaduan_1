@@ -56,14 +56,14 @@ class _KelolaSiswaPageState extends State<KelolaSiswaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFF0FDFA),
       appBar: AppBar(
-        title: const Text('Kelola Data Siswa', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0.5,
+        title: const Text('Kelola Data Siswa', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+        backgroundColor: const Color(0xFF0D9488),
+        foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
-          IconButton(onPressed: _fetchData, icon: const Icon(Icons.refresh_rounded)),
+          IconButton(onPressed: _fetchData, icon: const Icon(Icons.refresh_rounded, color: Colors.white)),
         ],
       ),
       body: Column(

@@ -76,12 +76,12 @@ class _TanggapanPageState extends State<TanggapanPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2FF),
+      backgroundColor: const Color(0xFFF0FDFA),
       appBar: AppBar(
-        title: const Text('Tanggapan Laporan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 1,
+        title: const Text('Tanggapan Laporan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+        backgroundColor: const Color(0xFF0D9488),
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Column(
         children: [

@@ -14,7 +14,7 @@ class ProfilTUPage extends StatefulWidget {
 }
 
 class _ProfilTUPageState extends State<ProfilTUPage> {
-  static const Color _primary = Color(0xFF6366F1); // Indigo
+  static const Color _primary = Color(0xFF0D9488); // Indigo
   Map<String, dynamic>? _userData;
   File? _profileImage;
   bool _isLoading = true;
@@ -112,7 +112,7 @@ class _ProfilTUPageState extends State<ProfilTUPage> {
     final username = user['username'] ?? '-';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FF),
+      backgroundColor: const Color(0xFFF0FDFA),
       body: RefreshIndicator(
         onRefresh: _fetchUserData,
         child: SingleChildScrollView(
@@ -152,7 +152,7 @@ class _ProfilTUPageState extends State<ProfilTUPage> {
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF4338CA), Color(0xFF6366F1), Color(0xFF818CF8)],
+          colors: [Color(0xFF0F766E), Color(0xFF0D9488), Color(0xFF14B8A6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -388,4 +388,4 @@ class _ProfilTUPageState extends State<ProfilTUPage> {
       ),
     );
   }
-}
+}

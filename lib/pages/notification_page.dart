@@ -144,14 +144,14 @@ class _NotificationPageState extends State<NotificationPage> with SingleTickerPr
     final unread = _notifications.where((n) => !n.isRead).length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFFF0FDFA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0.5,
+        backgroundColor: const Color(0xFF0D9488),
+        foregroundColor: Colors.white,
+        elevation: 0,
         title: Row(
           children: [
-            const Text('Notifikasi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text('Notifikasi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
             if (unread > 0) ...[
               const SizedBox(width: 8),
               Container(
@@ -175,7 +175,7 @@ class _NotificationPageState extends State<NotificationPage> with SingleTickerPr
                 if (val == 'read_all') _markAllRead();
                 if (val == 'clear_all') _clearAll();
               },
-              icon: const Icon(Icons.more_vert_rounded),
+              icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               itemBuilder: (_) => [
                 const PopupMenuItem(value: 'read_all', child: Row(

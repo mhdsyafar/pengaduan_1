@@ -10,7 +10,7 @@ class MonitoringView extends StatefulWidget {
 }
 
 class _MonitoringViewState extends State<MonitoringView> {
-  static const Color _primary = Color(0xFF7048E8);
+  static const Color _primary = Color(0xFF0D9488);
   bool _isLoading = true;
   List<Pengaduan> _laporan = [];
   
@@ -80,7 +80,7 @@ class _MonitoringViewState extends State<MonitoringView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F4FF),
+      backgroundColor: const Color(0xFFF0FDFA),
       appBar: AppBar(
         backgroundColor: _primary,
         title: const Text('Monitoring Respons', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -93,7 +93,7 @@ class _MonitoringViewState extends State<MonitoringView> {
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF5E35B1), Color(0xFF7048E8)],
+              colors: [Color(0xFF0F766E), Color(0xFF0D9488)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

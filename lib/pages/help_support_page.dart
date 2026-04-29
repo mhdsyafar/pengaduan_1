@@ -5,7 +5,7 @@ class HelpSupportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color primary = Color(0xFF2F4AC2);
+    const Color primary = Color(0xFF0D9488);
 
     final List<Map<String, String>> faqs = [
       {
@@ -31,11 +31,11 @@ class HelpSupportPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2FF),
+      backgroundColor: const Color(0xFFF0FDFA),
       appBar: AppBar(
-        title: const Text('Bantuan & Dukungan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        backgroundColor: Colors.white,
-        foregroundColor: primary,
+        title: const Text('Bantuan & Dukungan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+        backgroundColor: primary,
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
       ),
@@ -153,10 +153,10 @@ class HelpSupportPage extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFF2F4AC2).withValues(alpha: 0.1),
+            color: const Color(0xFF0D9488).withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.email_rounded, color: Color(0xFF2F4AC2), size: 20),
+          child: const Icon(Icons.email_rounded, color: Color(0xFF0D9488), size: 20),
         ),
         title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
         subtitle: Text(subtitle, style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),

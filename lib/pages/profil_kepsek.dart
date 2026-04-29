@@ -16,7 +16,7 @@ class ProfilKepsekPage extends StatefulWidget {
 }
 
 class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
-  static const Color _primary = Color(0xFF7048E8);
+  static const Color _primary = Color(0xFF0D9488);
 
   bool _notifPengaduan = true;
   File? _profileImage;
@@ -90,7 +90,7 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F4FF),
+      backgroundColor: const Color(0xFFF0FDFA),
       body: CustomScrollView(
         slivers: [
           _buildHeader(),
@@ -147,7 +147,7 @@ class _ProfilKepsekPageState extends State<ProfilKepsekPage> {
         background: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF7048E8), Color(0xFF9775FA)],
+              colors: [Color(0xFF0D9488), Color(0xFF14B8A6)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

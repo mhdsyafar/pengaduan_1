@@ -19,7 +19,7 @@ class _StatusPengaduanPageState extends State<StatusPengaduanPage> {
   List<Pengaduan> pengaduanList = [];
   bool isLoading = true;
 
-  static const Color _primary = Color(0xFF2F4AC2);
+  static const Color _primary = Color(0xFF0D9488);
 
   @override
   void initState() {
@@ -66,7 +66,7 @@ class _StatusPengaduanPageState extends State<StatusPengaduanPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2FF),
+      backgroundColor: const Color(0xFFF0FDFA),
       appBar: AppBar(
         backgroundColor: _primary,
         title: const Text('Status Pengaduan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -78,7 +78,7 @@ class _StatusPengaduanPageState extends State<StatusPengaduanPage> {
         ],
         flexibleSpace: Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(colors: [Color(0xFF283F9E), Color(0xFF2F4AC2)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+            gradient: LinearGradient(colors: [Color(0xFF0F766E), Color(0xFF0D9488)], begin: Alignment.topLeft, end: Alignment.bottomRight),
           ),
         ),
       ),

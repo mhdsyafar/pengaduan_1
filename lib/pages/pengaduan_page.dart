@@ -71,11 +71,11 @@ class _PengaduanPageState extends State<PengaduanPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2FF),
+      backgroundColor: const Color(0xFFF0FDFA),
       appBar: AppBar(
-        title: const Text('Ajukan Pengaduan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF2F4AC2),
+        title: const Text('Ajukan Pengaduan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.white)),
+        backgroundColor: const Color(0xFF0D9488),
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
       ),

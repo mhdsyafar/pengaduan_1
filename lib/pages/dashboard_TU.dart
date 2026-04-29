@@ -276,7 +276,7 @@ class _DashboardTUState extends State<DashboardTU> {
       children: [
         _statCard('Siswa', pSiswa, Icons.school_rounded, const Color(0xFF3B5BDB), const Color(0xFFEDF2FF), () => widget.onNavigate('siswa')),
         _statCard('Orang Tua', pPengadu, Icons.people_rounded, const Color(0xFF0CA678), const Color(0xFFE6FCF5), () => widget.onNavigate('pengadu')),
-        _statCard('Petugas', pPetugas, Icons.badge_rounded, const Color(0xFF6366F1), const Color(0xFFEEF2FF), () => widget.onNavigate('petugas')),
+        _statCard('Petugas', pPetugas, Icons.badge_rounded, const Color(0xFF0D9488), const Color(0xFFF0FDFA), () => widget.onNavigate('petugas')),
         _statCard('Pengaduan', pPengaduan, Icons.inbox_rounded, const Color(0xFFEA6C00), const Color(0xFFFFF4E6), () => widget.onNavigate('pengaduan')),
       ],
     );

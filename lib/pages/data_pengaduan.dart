@@ -64,29 +64,36 @@ class _DataPengaduanState extends State<DataPengaduan> {
     }).toList();
   }
 
-  Future<void> updateStatus(String id, StatusPengaduan status) async {
-    // 1. Dapatkan konversi string status
-    String statusStr = 'diajukan'; // default
-    if (status == StatusPengaduan.diproses) statusStr = 'diproses';
-    if (status == StatusPengaduan.selesai) statusStr = 'selesai';
-    if (status == StatusPengaduan.ditolak) statusStr = 'ditolak';
+  Future<void> deletePengaduan(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Pengaduan'),
+        content: const Text('Yakin ingin menghapus pengaduan ini? Data yang dihapus tidak dapat dikembalikan.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
 
-    // 2. Panggil API backend
-    final response = await ApiService.updateStatusPengaduan(id, statusStr);
+    if (confirmed != true) return;
+
+    setState(() => isLoading = true);
+    final response = await ApiService.deletePengaduan(id);
     
     if (!mounted) return;
-    
+
     if (response['success'] == true) {
-      // 3. Jika sukses, muat ulang daftar pengaduan
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Status berhasil diperbarui!')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pengaduan berhasil dihapus!')));
       _fetchData();
     } else {
-      // 4. Jika gagal, tampilkan error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response['message'] ?? 'Gagal memperbarui status')),
-      );
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response['message'] ?? 'Gagal menghapus pengaduan')));
     }
   }
 
@@ -107,10 +114,16 @@ class _DataPengaduanState extends State<DataPengaduan> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Data Pengaduan'),
+        title: const Text(
+          'Data Pengaduan',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        backgroundColor: const Color(0xFF0D9488),
+        foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: isLoading ? null : _fetchData,
           )
         ],
@@ -291,34 +304,27 @@ class _DataPengaduanState extends State<DataPengaduan> {
                       )),
                     ],
 
-                    const SizedBox(height: 24),
-                    const Text('Aksi Cepat', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: StatusPengaduan.values.map((s) {
-                        final isCurrent = s == p.status;
-                        return SizedBox(
-                          width: (MediaQuery.of(context).size.width - 48) / 2,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isCurrent ? statusColor(s) : Colors.white,
-                              foregroundColor: isCurrent ? Colors.white : statusColor(s),
-                              elevation: 0,
-                              side: BorderSide(color: statusColor(s)),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            onPressed: isCurrent ? null : () {
-                              Navigator.pop(context);
-                              updateStatus(p.id, s);
-                            },
-                            child: Text(s.name.toUpperCase(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          ),
-                        );
-                      }).toList(),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade50,
+                          foregroundColor: Colors.red,
+                          elevation: 0,
+                          side: BorderSide(color: Colors.red.shade200),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          deletePengaduan(p.id);
+                        },
+                        icon: const Icon(Icons.delete_forever_rounded),
+                        label: const Text('Hapus Pengaduan', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
                     ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),

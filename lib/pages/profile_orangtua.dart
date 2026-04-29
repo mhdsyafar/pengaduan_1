@@ -14,7 +14,7 @@ class ProfileOrangTua extends StatefulWidget {
 }
 
 class _ProfileOrangTuaState extends State<ProfileOrangTua> {
-  static const Color _primary = Color(0xFF2F4AC2);
+  static const Color _primary = Color(0xFF0D9488);
   Map<String, dynamic>? _userData;
   File? _profileImage;
   bool _isLoading = true;
@@ -128,7 +128,7 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2FF),
+      backgroundColor: const Color(0xFFF0FDFA),
       body: RefreshIndicator(
         onRefresh: _fetchUserData,
         child: SingleChildScrollView(
@@ -168,7 +168,7 @@ class _ProfileOrangTuaState extends State<ProfileOrangTua> {
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF283F9E), Color(0xFF2F4AC2), Color(0xFF5C73DB)],
+          colors: [Color(0xFF0F766E), Color(0xFF0D9488), Color(0xFF14B8A6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

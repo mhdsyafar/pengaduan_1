@@ -10,7 +10,7 @@ class StatisticsView extends StatefulWidget {
 }
 
 class _StatisticsViewState extends State<StatisticsView> {
-  static const Color _primary = Color(0xFF7048E8);
+  static const Color _primary = Color(0xFF0D9488);
   bool _isLoading = true;
   List<Pengaduan> _laporan = [];
 
@@ -38,7 +38,7 @@ class _StatisticsViewState extends State<StatisticsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F4FF),
+      backgroundColor: const Color(0xFFF0FDFA),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : CustomScrollView(
@@ -79,7 +79,7 @@ class _StatisticsViewState extends State<StatisticsView> {
         background: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF5E35B1), Color(0xFF7048E8)],
+              colors: [Color(0xFF0F766E), Color(0xFF0D9488)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

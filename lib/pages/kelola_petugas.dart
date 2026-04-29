@@ -35,7 +35,7 @@ class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(res['message'] ?? 'Gagal memuat pengguna')),
+          SnackBar(content: Text(res['message'] ?? 'Gagal memuat petugas')),
         );
       }
     }
@@ -66,7 +66,7 @@ class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hapus Pengguna'),
+        title: const Text('Hapus Petugas'),
         content: const Text('Yakin ingin menghapus data ini?'),
         actions: [
           TextButton(
@@ -82,7 +82,7 @@ class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
               if (!context.mounted) return;
               if (res['success']) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Berhasil menghapus pengguna')),
+                  const SnackBar(content: Text('Berhasil menghapus petugas')),
                 );
                 _loadData();
               } else {
@@ -134,7 +134,7 @@ class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      isEdit ? "Edit Pengguna" : "Tambah Pengguna Baru",
+                      isEdit ? "Edit Petugas" : "Tambah Petugas Baru",
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
@@ -252,7 +252,7 @@ class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
 
                         if (res['success']) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(isEdit ? 'Berhasil mengupdate pengguna' : 'Berhasil menambah pengguna')),
+                            SnackBar(content: Text(isEdit ? 'Berhasil mengupdate petugas' : 'Berhasil menambah petugas')),
                           );
                           _loadData();
                         } else {
@@ -278,13 +278,13 @@ class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Kelola Pengguna", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0.5,
+        title: const Text("Kelola Petugas", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+        backgroundColor: const Color(0xFF0D9488),
+        foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
             onPressed: () => _loadData(),
           )
         ],
@@ -293,7 +293,7 @@ class _KelolaPetugasPageState extends State<KelolaPetugasPage> {
         onPressed: () => showForm(context),
         backgroundColor: const Color(0xFF0D9488),
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('Tambah Pengguna', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text('Tambah Petugas', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

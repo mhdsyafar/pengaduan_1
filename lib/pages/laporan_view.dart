@@ -11,7 +11,7 @@ class LaporanView extends StatefulWidget {
 }
 
 class _LaporanViewState extends State<LaporanView> {
-  static const Color _primary = Color(0xFF7048E8);
+  static const Color _primary = Color(0xFF0D9488);
   late String _selectedFilter;
   bool _isLoading = true;
 
@@ -60,7 +60,7 @@ class _LaporanViewState extends State<LaporanView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F4FF),
+      backgroundColor: const Color(0xFFF0FDFA),
       appBar: AppBar(
         backgroundColor: _primary,
         title: const Text('Daftar Laporan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -69,7 +69,7 @@ class _LaporanViewState extends State<LaporanView> {
         ],
         flexibleSpace: Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(colors: [Color(0xFF5E35B1), Color(0xFF7048E8)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+            gradient: LinearGradient(colors: [Color(0xFF0F766E), Color(0xFF0D9488)], begin: Alignment.topLeft, end: Alignment.bottomRight),
           ),
         ),
       ),
@@ -259,4 +259,4 @@ class _LaporanViewState extends State<LaporanView> {
       ),
     );
   }
-}
+}
